@@ -1,7 +1,7 @@
--- [[ BoDcChii VD Helper v3.2 - Full ESP No Glitch 😈 ]] --
+-- [[ BoDcChii VD Helper v3.3 - Color Lock Fix 😈 ]] --
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BoDcChii_v32"
+ScreenGui.Name = "BoDcChii_ColorFix"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ResetOnSpawn = false
 
@@ -76,38 +76,51 @@ local function CreateToggleButton(parent, text, offColor, callback)
     return Btn
 end
 
--- --- CORE FUNCTIONS (ESP ONLY) ---
+-- --- CORE FUNCTIONS (FIXED COLORS) ---
 
--- 1. PLAYER ESP (KILLER & SURVIVOR)
-local function PlayerESP(state, targetType, color)
+-- Fungsi untuk cek siapa pembunuhnya
+local function GetIsKiller(p)
+    if p.Character and (p.Character:FindFirstChild("Knife") or p.Character:FindFirstChild("Weapon")) then
+        return true
+    end
+    if p.Team and (p.Team.Name:lower():find("killer") or p.Team.Name:lower():find("slasher")) then
+        return true
+    end
+    return false
+end
+
+-- 1. PLAYER ESP (FIXED COLOR LOGIC)
+local function PlayerESP(state, mode, color)
+    -- mode: 1 = Mau liat Killer (Merah), 2 = Mau liat Survivor (Hijau)
     if state then
-        _G.PlayerLoop = game:GetService("RunService").Heartbeat:Connect(function()
+        _G["Loop_"..mode] = game:GetService("RunService").Heartbeat:Connect(function()
             for _, p in pairs(game.Players:GetPlayers()) do
                 if p ~= game.Players.LocalPlayer and p.Character then
-                    -- Deteksi Tim Killer
-                    local isKiller = false
-                    if (p.Team and (p.Team.Name:lower():find("killer") or p.Team.Name:lower():find("slasher"))) or p.Character:FindFirstChild("Knife") then
-                        isKiller = true
-                    end
-
-                    if (targetType == 1 and isKiller) or (targetType == 2 and not isKiller) then
+                    local isKiller = GetIsKiller(p)
+                    
+                    -- Kunci Warna: Hanya buat ESP jika perannya sesuai target
+                    if (mode == 1 and isKiller) or (mode == 2 and not isKiller) then
                         local hi = p.Character:FindFirstChild("BD_Highlight") or Instance.new("Highlight")
                         hi.Name = "BD_Highlight"
                         hi.Parent = p.Character
                         hi.FillColor = color
-                        hi.OutlineColor = Color3.new(1,1,1)
+                        hi.OutlineColor = Color3.new(1, 1, 1)
                         hi.FillTransparency = 0.4
-                        hi.OutlineTransparency = 0
                     else
-                        if p.Character:FindFirstChild("BD_Highlight") then p.Character.BD_Highlight:Destroy() end
+                        -- Hapus ESP jika perannya tidak sesuai (cegah warna berubah-ubah)
+                        if p.Character:FindFirstChild("BD_Highlight") and not state then
+                             p.Character.BD_Highlight:Destroy()
+                        end
                     end
                 end
             end
         end)
     else
-        if _G.PlayerLoop then _G.PlayerLoop:Disconnect() end
+        if _G["Loop_"..mode] then _G["Loop_"..mode]:Disconnect() end
         for _, p in pairs(game.Players:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("BD_Highlight") then p.Character.BD_Highlight:Destroy() end
+            if p.Character and p.Character:FindFirstChild("BD_Highlight") then
+                p.Character.BD_Highlight:Destroy()
+            end
         end
     end
 end
@@ -115,21 +128,18 @@ end
 -- 2. OBJECT ESP (GEN & PALLET)
 local function ObjectESP(state, nameKey, color)
     if state then
-        _G.ObjLoop = game:GetService("RunService").Heartbeat:Connect(function()
+        _G["Obj_"..nameKey] = game:GetService("RunService").Heartbeat:Connect(function()
             for _, v in pairs(workspace:GetDescendants()) do
                 if v.Name:find(nameKey) or (v.Parent and v.Parent.Name:find(nameKey)) then
                     if not v:FindFirstChild("BD_ObjESP") then
                         local hi = Instance.new("Highlight")
-                        hi.Name = "BD_ObjESP"
-                        hi.Parent = v
-                        hi.FillColor = color
-                        hi.FillTransparency = 0.5
+                        hi.Name = "BD_ObjESP"; hi.Parent = v; hi.FillColor = color; hi.FillTransparency = 0.5
                     end
                 end
             end
         end)
     else
-        if _G.ObjLoop then _G.ObjLoop:Disconnect() end
+        if _G["Obj_"..nameKey] then _G["Obj_"..nameKey]:Disconnect() end
         for _, v in pairs(workspace:GetDescendants()) do
             if v:FindFirstChild("BD_ObjESP") then v.BD_ObjESP:Destroy() end
         end
@@ -137,17 +147,14 @@ local function ObjectESP(state, nameKey, color)
 end
 
 -- --- SETUP TOMBOL ---
--- Tab Survival (Untuk Survivor)
 CreateToggleButton(SurPage, "ESP Killer", Color3.fromRGB(200, 50, 50), function(s) 
-    PlayerESP(s, 1, Color3.fromRGB(255, 0, 0)) -- MERAH
+    PlayerESP(s, 1, Color3.fromRGB(255, 0, 0)) -- MERAH MURNI
 end)
 
--- Tab Killer (Untuk Killer)
 CreateToggleButton(KlrPage, "ESP Survival", Color3.fromRGB(200, 50, 50), function(s) 
-    PlayerESP(s, 2, Color3.fromRGB(0, 255, 0)) -- HIJAU
+    PlayerESP(s, 2, Color3.fromRGB(0, 255, 0)) -- HIJAU MURNI
 end)
 
--- Tab ESP Visual (Barang)
 CreateToggleButton(EspPage, "Full Bright", Color3.fromRGB(200, 50, 50), function(s)
     game:GetService("Lighting").Brightness = s and 2 or 1
 end)
