@@ -1,11 +1,10 @@
 -- [[ BoDcChii Project - v4.1: Minimalist BD 🎸 ]] --
--- Perbaikan Final: Deteksi Team & Warna ESP
+-- Perbaikan: Pemisahan Logika Tombol & Prioritas Warna Merah
 
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
-local Teams = game:GetService("Teams")
 
 -- Bersihkan versi sebelumnya
 if CoreGui:FindFirstChild("BoDcChii_Minimalist") then
@@ -48,19 +47,21 @@ Header.BackgroundTransparency = 1
 Header.Font = Enum.Font.SourceSansBold
 Header.TextSize = 18
 
--- --- 3. LOGIKA ESP TERBARU ---
+-- --- 3. LOGIKA ESP (SURVIVOR & KILLER) ---
 local SurvivorEnabled = false
 local KillerEnabled = false
 
--- Fungsi Deteksi Killer Berdasarkan Team / Senjata
-local function IsKiller(player)
-    -- 1. Cek berdasarkan nama Team (Sering digunakan di District)
-    if player.Team and (player.Team.Name:find("Killer") or player.Team.Name:find("Murderer")) then
-        return true
-    end
-    -- 2. Cek jika memegang Tool (Pisau/Senjata)
+-- Fungsi Deteksi Killer (Mendeteksi senjata/knife/folder killer)
+local function CheckIfKiller(player)
     local char = player.Character
-    if char and (char:FindFirstChildOfClass("Tool") or player.Backpack:FindFirstChildOfClass("Tool")) then
+    if not char then return false end
+    
+    -- Cek Tool yang sedang dipegang atau ada di tas
+    local tool = char:FindFirstChildOfClass("Tool") or player.Backpack:FindFirstChildOfClass("Tool")
+    -- Cek Folder atau Tag "Killer" yang biasa ada di game District
+    local folder = char:FindFirstChild("Killer") or player:FindFirstChild("Killer")
+    
+    if tool or folder then
         return true
     end
     return false
@@ -86,7 +87,7 @@ KillBtn.TextColor3 = Color3.new(1, 1, 1)
 KillBtn.Font = Enum.Font.SourceSansBold
 Instance.new("UICorner", KillBtn)
 
--- Loop Utama (Force Update Warna)
+-- Loop Render (Sangat Penting: Memisahkan Logika)
 RunService.RenderStepped:Connect(function()
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= Players.LocalPlayer and p.Character then
@@ -97,21 +98,23 @@ RunService.RenderStepped:Connect(function()
                 hl.OutlineColor = Color3.new(1, 1, 1)
             end
 
-            -- LOGIKA WARNA YANG DIPAKSA
-            if IsKiller(p) then
+            -- PRIORITAS LOGIKA:
+            local isKiller = CheckIfKiller(p)
+
+            if isKiller then
+                -- Jika dia Killer, dia HANYA aktif kalau tombol Killer ON
                 hl.FillColor = Color3.fromRGB(255, 0, 0) -- MERAH
                 hl.Enabled = KillerEnabled
-                hl.FillTransparency = 0.4 -- Lebih pekat agar beda
             else
+                -- Jika dia Survivor, dia HANYA aktif kalau tombol Survivor ON
                 hl.FillColor = Color3.fromRGB(0, 255, 0) -- HIJAU
                 hl.Enabled = SurvivorEnabled
-                hl.FillTransparency = 0.6
             end
         end
     end
 end)
 
--- Tombol Click Events
+-- Event Klik Tombol
 SurvBtn.MouseButton1Click:Connect(function()
     SurvivorEnabled = not SurvivorEnabled
     SurvBtn.Text = SurvivorEnabled and "ESP Survivor: ON" or "ESP Survivor: OFF"
@@ -124,9 +127,8 @@ KillBtn.MouseButton1Click:Connect(function()
     KillBtn.BackgroundColor3 = KillerEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
 end)
 
--- --- 4. SISTEM MENU & DRAG ---
+-- --- 4. SISTEM MENU ---
 OpenButton.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
-
 local Exit = Instance.new("TextButton", MainFrame)
 Exit.Size = UDim2.new(0, 25, 0, 25)
 Exit.Position = UDim2.new(1, -30, 0, 7)
@@ -136,6 +138,7 @@ Exit.TextColor3 = Color3.new(1, 1, 1)
 Instance.new("UICorner", Exit).CornerRadius = UDim.new(1, 0)
 Exit.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
+-- --- 5. DRAG SYSTEM ---
 local dragging, dragStart, startPos
 OpenButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
