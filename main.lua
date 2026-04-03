@@ -1,8 +1,8 @@
--- [[ BoDcChii Project - v1.8: Generator ESP (Red/Green Toggle) 🎸 ]] --
+-- [[ BoDcChii Project - v1.9: Pure Generator ESP Edition 🎸 ]] --
 
 local UserInputService = game:GetService("UserInputService")
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BoDcChii_Final_GenESP_Color"
+ScreenGui.Name = "BoDcChii_Final_Clean"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ResetOnSpawn = false
 
@@ -42,7 +42,7 @@ MakeDraggable(OpenIcon)
 
 -- --- 3. MAIN FRAME ---
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 280, 0, 250); MainFrame.Position = UDim2.new(0.5, -140, 0.3, 0)
+MainFrame.Size = UDim2.new(0, 280, 0, 220); MainFrame.Position = UDim2.new(0.5, -140, 0.3, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15); MainFrame.Visible = false; MainFrame.Active = true
 Instance.new("UICorner", MainFrame); Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(255, 105, 180)
 MakeDraggable(MainFrame)
@@ -59,22 +59,9 @@ TabLabel.BackgroundColor3 = Color3.fromRGB(45, 45, 45); TabLabel.Font = Enum.Fon
 -- --- 5. LOGIK ESP GENERATOR ---
 local genESPActive = false
 
-local function ApplyESP(obj)
-    if not obj:FindFirstChild("Gen_ESP") then
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "Gen_ESP"
-        highlight.Parent = obj
-        highlight.FillColor = Color3.fromRGB(0, 255, 255) -- Cyan
-        highlight.OutlineColor = Color3.new(1, 1, 1)
-        highlight.AlwaysOnTop = true
-    end
-end
-
 local function RemoveESP()
     for _, v in pairs(game.Workspace:GetDescendants()) do
-        if v.Name == "Gen_ESP" and v:IsA("Highlight") then
-            v:Destroy()
-        end
+        if v.Name == "Gen_ESP" and v:IsA("Highlight") then v:Destroy() end
     end
 end
 
@@ -82,38 +69,41 @@ task.spawn(function()
     while true do
         if genESPActive then
             for _, v in pairs(game.Workspace:GetDescendants()) do
-                -- Mencari objek dengan nama Generator
                 if (v.Name:lower():find("generator") or v.Name:lower():find("gen")) and (v:IsA("Model") or v:IsA("BasePart")) then
-                    ApplyESP(v)
+                    if not v:FindFirstChild("Gen_ESP") then
+                        local h = Instance.new("Highlight", v)
+                        h.Name = "Gen_ESP"; h.FillColor = Color3.fromRGB(0, 255, 255)
+                        h.AlwaysOnTop = true
+                    end
                 end
             end
         else
             RemoveESP()
         end
-        task.wait(3) -- Scan ulang setiap 3 detik
+        task.wait(2)
     end
 end)
 
--- --- 6. TOMBOL FITUR (MERAH & HIJAU) ---
+-- --- 6. TOMBOL ESP GENERATOR (ONLY ONE) ---
 local BtnGen = Instance.new("TextButton", MainFrame)
-BtnGen.Size = UDim2.new(0, 180, 0, 45); BtnGen.Position = UDim2.new(0, 90, 0, 50)
-BtnGen.BackgroundColor3 = Color3.fromRGB(180, 50, 50); BtnGen.Text = "1. ESP Generator: OFF" -- AWALNYA MERAH
+BtnGen.Size = UDim2.new(0, 180, 0, 45); BtnGen.Position = UDim2.new(0, 90, 0, 60) -- Posisi Tengah
+BtnGen.BackgroundColor3 = Color3.fromRGB(180, 50, 50); BtnGen.Text = "1. ESP Generator: OFF"
 BtnGen.TextColor3 = Color3.new(1, 1, 1); BtnGen.Font = Enum.Font.SourceSansBold
 Instance.new("UICorner", BtnGen)
 
 BtnGen.MouseButton1Click:Connect(function()
     genESPActive = not genESPActive
     if genESPActive then
-        BtnGen.BackgroundColor3 = Color3.fromRGB(50, 180, 50) -- HIJAU JIKA ON
+        BtnGen.BackgroundColor3 = Color3.fromRGB(50, 180, 50) -- HIJAU
         BtnGen.Text = "1. ESP Generator: ON"
     else
-        BtnGen.BackgroundColor3 = Color3.fromRGB(180, 50, 50) -- MERAH JIKA OFF
+        BtnGen.BackgroundColor3 = Color3.fromRGB(180, 50, 50) -- MERAH
         BtnGen.Text = "1. ESP Generator: OFF"
         RemoveESP()
     end
 end)
 
--- EXIT (X)
+-- EXIT
 local Exit = Instance.new("TextButton", MainFrame)
 Exit.Size = UDim2.new(0, 30, 0, 30); Exit.Position = UDim2.new(1, -35, 0, 5); Exit.Text = "X"
 Exit.BackgroundColor3 = Color3.new(1, 0, 0); Exit.TextColor3 = Color3.new(1, 1, 1)
