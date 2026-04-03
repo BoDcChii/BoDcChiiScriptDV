@@ -1,7 +1,7 @@
--- [[ BoDcChii VD Helper v3.0 - Stable & No Glitch 😈 ]] --
+-- [[ BoDcChii VD Helper v3.2 - Full ESP No Glitch 😈 ]] --
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BoDcChii_Stable"
+ScreenGui.Name = "BoDcChii_v32"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ResetOnSpawn = false
 
@@ -76,71 +76,88 @@ local function CreateToggleButton(parent, text, offColor, callback)
     return Btn
 end
 
--- --- CORE FUNCTIONS (LIGHTWEIGHT) ---
+-- --- CORE FUNCTIONS (ESP ONLY) ---
 
--- 1. FUNGSI ESP PLAYER (PAKAI TEKS BIAR RINGAN)
-local function SimpleESP(state, targetType, color)
-    -- targetType: 1 = Killer, 2 = Survivor
+-- 1. PLAYER ESP (KILLER & SURVIVOR)
+local function PlayerESP(state, targetType, color)
     if state then
-        _G.ESP_Loop = game:GetService("RunService").Heartbeat:Connect(function()
+        _G.PlayerLoop = game:GetService("RunService").Heartbeat:Connect(function()
             for _, p in pairs(game.Players:GetPlayers()) do
-                if p ~= game.Players.LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+                if p ~= game.Players.LocalPlayer and p.Character then
+                    -- Deteksi Tim Killer
                     local isKiller = false
-                    if p.Team and (p.Team.Name:lower():find("killer") or p.Team.Name:lower():find("slasher")) then
+                    if (p.Team and (p.Team.Name:lower():find("killer") or p.Team.Name:lower():find("slasher"))) or p.Character:FindFirstChild("Knife") then
                         isKiller = true
                     end
 
                     if (targetType == 1 and isKiller) or (targetType == 2 and not isKiller) then
-                        if not p.Character.Head:FindFirstChild("BD_Tag") then
-                            local tag = Instance.new("BillboardGui")
-                            tag.Name = "BD_Tag"
-                            tag.Parent = p.Character.Head
-                            tag.Size = UDim2.new(0, 100, 0, 50)
-                            tag.Adornee = p.Character.Head
-                            tag.AlwaysOnTop = true
-                            tag.ExtentsOffset = Vector3.new(0, 3, 0)
-
-                            local label = Instance.new("TextLabel")
-                            label.Parent = tag
-                            label.BackgroundTransparency = 1
-                            label.Size = UDim2.new(1, 0, 1, 0)
-                            label.Text = isKiller and "⚠️ KILLER ⚠️" or "👤 SURVIVOR"
-                            label.TextColor3 = color
-                            label.TextStrokeTransparency = 0
-                            label.Font = Enum.Font.SourceSansBold
-                            label.TextSize = 14
-                        end
+                        local hi = p.Character:FindFirstChild("BD_Highlight") or Instance.new("Highlight")
+                        hi.Name = "BD_Highlight"
+                        hi.Parent = p.Character
+                        hi.FillColor = color
+                        hi.OutlineColor = Color3.new(1,1,1)
+                        hi.FillTransparency = 0.4
+                        hi.OutlineTransparency = 0
                     else
-                        if p.Character.Head:FindFirstChild("BD_Tag") then p.Character.Head.BD_Tag:Destroy() end
+                        if p.Character:FindFirstChild("BD_Highlight") then p.Character.BD_Highlight:Destroy() end
                     end
                 end
             end
         end)
     else
-        if _G.ESP_Loop then _G.ESP_Loop:Disconnect() end
+        if _G.PlayerLoop then _G.PlayerLoop:Disconnect() end
         for _, p in pairs(game.Players:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("Head") and p.Character.Head:FindFirstChild("BD_Tag") then
-                p.Character.Head.BD_Tag:Destroy()
+            if p.Character and p.Character:FindFirstChild("BD_Highlight") then p.Character.BD_Highlight:Destroy() end
+        end
+    end
+end
+
+-- 2. OBJECT ESP (GEN & PALLET)
+local function ObjectESP(state, nameKey, color)
+    if state then
+        _G.ObjLoop = game:GetService("RunService").Heartbeat:Connect(function()
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v.Name:find(nameKey) or (v.Parent and v.Parent.Name:find(nameKey)) then
+                    if not v:FindFirstChild("BD_ObjESP") then
+                        local hi = Instance.new("Highlight")
+                        hi.Name = "BD_ObjESP"
+                        hi.Parent = v
+                        hi.FillColor = color
+                        hi.FillTransparency = 0.5
+                    end
+                end
             end
+        end)
+    else
+        if _G.ObjLoop then _G.ObjLoop:Disconnect() end
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:FindFirstChild("BD_ObjESP") then v.BD_ObjESP:Destroy() end
         end
     end
 end
 
 -- --- SETUP TOMBOL ---
-CreateToggleButton(SurPage, "Perfect Gen (Disabled)", Color3.fromRGB(100, 100, 100), function(s) 
-    print("Fitur dimatikan sementara agar tidak bug UI")
-end)
-
+-- Tab Survival (Untuk Survivor)
 CreateToggleButton(SurPage, "ESP Killer", Color3.fromRGB(200, 50, 50), function(s) 
-    SimpleESP(s, 1, Color3.fromRGB(255, 0, 0)) 
+    PlayerESP(s, 1, Color3.fromRGB(255, 0, 0)) -- MERAH
 end)
 
+-- Tab Killer (Untuk Killer)
 CreateToggleButton(KlrPage, "ESP Survival", Color3.fromRGB(200, 50, 50), function(s) 
-    SimpleESP(s, 2, Color3.fromRGB(0, 255, 0)) 
+    PlayerESP(s, 2, Color3.fromRGB(0, 255, 0)) -- HIJAU
 end)
 
+-- Tab ESP Visual (Barang)
 CreateToggleButton(EspPage, "Full Bright", Color3.fromRGB(200, 50, 50), function(s)
     game:GetService("Lighting").Brightness = s and 2 or 1
+end)
+
+CreateToggleButton(EspPage, "ESP Generator", Color3.fromRGB(200, 50, 50), function(s)
+    ObjectESP(s, "Generator", Color3.fromRGB(255, 255, 0)) -- KUNING
+end)
+
+CreateToggleButton(EspPage, "ESP Pallet", Color3.fromRGB(200, 50, 50), function(s)
+    ObjectESP(s, "Pallet", Color3.fromRGB(255, 255, 0)) -- KUNING
 end)
 
 -- --- NAVIGASI ---
