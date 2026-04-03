@@ -1,4 +1,4 @@
--- [[ BoDcChii Project - v4.1: Minimalist BD (v4.7 Billboard Fix) 🎸 ]] --
+-- [[ BoDcChii Project - v4.8: Perk Survivor Logic 🎸 ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
@@ -38,52 +38,61 @@ local Line = Instance.new("Frame", MainFrame)
 Line.Size = UDim2.new(0.9, 0, 0, 2); Line.Position = UDim2.new(0.05, 0, 0, 40)
 Line.BackgroundColor3 = Color3.fromRGB(255, 105, 180); Line.BorderSizePixel = 0
 
--- --- 3. LOGIKA BILLBOARD ESP (SESUAI PANDUAN BARU) ---
+-- --- 3. LOGIKA PERK AURA (SURVIVOR SENSE) ---
 local genActive = false
 
-local function CreateESP(part)
-    if not part:FindFirstChild("BochiESP_Gen") then
+local function CreateAura(obj)
+    if not obj:FindFirstChild("BochiAura") then
         local bill = Instance.new("BillboardGui")
-        bill.Name = "BochiESP_Gen"
-        bill.Size = UDim2.new(0, 100, 0, 40)
+        bill.Name = "BochiAura"
+        bill.Size = UDim2.new(0, 80, 0, 30)
         bill.AlwaysOnTop = true
-        bill.Adornee = part
-        bill.Parent = part
-        bill.MaxDistance = 5000 -- Biar kelihatan dari jauh banget
-
-        local text = Instance.new("TextLabel", bill)
-        text.Size = UDim2.new(1, 0, 1, 0)
-        text.BackgroundTransparency = 1
-        text.Text = "GEN"
-        text.TextColor3 = Color3.fromRGB(0, 255, 255) -- Cyan
-        text.TextStrokeTransparency = 0 -- List hitam biar jelas
-        text.Font = Enum.Font.SourceSansBold
-        text.TextScaled = true
+        bill.Parent = obj
+        
+        local txt = Instance.new("TextLabel", bill)
+        txt.Size = UDim2.new(1,0,1,0)
+        txt.BackgroundTransparency = 1
+        txt.Text = "⚡ GEN" -- Simbol petir biar keren
+        txt.TextColor3 = Color3.fromRGB(0, 255, 255)
+        txt.TextStrokeTransparency = 0
+        txt.Font = Enum.Font.SourceSansBold
+        txt.TextScaled = true
     end
 end
 
 task.spawn(function()
     while true do
         if genActive then
-            -- Gunakan strategi Visual Detection karena paling akurat
-            for _, obj in pairs(workspace:GetDescendants()) do
-                if obj:IsA("BasePart") then
-                    if obj.Size.Magnitude > 5 then
-                        if not obj.Parent:FindFirstChild("Humanoid") then
-                            if obj.Transparency < 0.5 then
-                                CreateESP(obj)
-                            end
-                        end
+            -- MENCARI BERDASARKAN "TANDA" PERK
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("Model") then
+                    -- 1. Cek apakah ada ProximityPrompt (Cara interaksi survivor)
+                    local prompt = v:FindFirstChildWhichIsA("ProximityPrompt", true)
+                    -- 2. Cek apakah ada script/value yang mengandung kata "Gen" atau "Repair"
+                    local isGen = false
+                    
+                    if prompt and (prompt.ObjectText:find("Gen") or prompt.ActionText:find("Repair")) then
+                        isGen = true
+                    end
+                    
+                    -- 3. Cek folder khusus lagi (Double Check)
+                    if v.Name:lower():find("generator") then
+                        isGen = true
+                    end
+
+                    if isGen then
+                        -- Cari part terdekat di model tersebut untuk ditempeli teks
+                        local p = v:FindFirstChildWhichIsA("BasePart", true)
+                        if p then CreateAura(p) end
                     end
                 end
             end
         else
-            -- Hapus Billboard saat OFF
             for _, v in pairs(workspace:GetDescendants()) do
-                if v.Name == "BochiESP_Gen" then v:Destroy() end
+                if v.Name == "BochiAura" then v:Destroy() end
             end
         end
-        task.wait(1)
+        task.wait(2)
     end
 end)
 
@@ -91,13 +100,13 @@ end)
 local GenBtn = Instance.new("TextButton", MainFrame)
 GenBtn.Size = UDim2.new(0.9, 0, 0, 45); GenBtn.Position = UDim2.new(0.05, 0, 0, 60)
 GenBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-GenBtn.Text = "ESP Generator: OFF"; GenBtn.TextColor3 = Color3.new(1, 1, 1)
+GenBtn.Text = "Aura Perk: OFF"; GenBtn.TextColor3 = Color3.new(1, 1, 1)
 GenBtn.Font = Enum.Font.SourceSansBold; Instance.new("UICorner", GenBtn)
 
 GenBtn.MouseButton1Click:Connect(function()
     genActive = not genActive
     GenBtn.BackgroundColor3 = genActive and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(180, 50, 50)
-    GenBtn.Text = genActive and "ESP Generator: ON" or "ESP Generator: OFF"
+    GenBtn.Text = genActive and "Aura Perk: ON" or "Aura Perk: OFF"
 end)
 
 -- --- 5. BUKA/TUTUP & DRAG ---
@@ -107,6 +116,7 @@ Exit.Size = UDim2.new(0, 25, 0, 25); Exit.Position = UDim2.new(1, -30, 0, 7); Ex
 Exit.BackgroundColor3 = Color3.fromRGB(200, 50, 50); Instance.new("UICorner", Exit).CornerRadius = UDim.new(1, 0)
 Exit.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
+-- SISTEM DRAG SIMPLE
 local dragging, dragStart, startPos
 OpenButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
