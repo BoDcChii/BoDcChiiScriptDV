@@ -1,4 +1,4 @@
--- [[ BoDcChii Project - v4.4: Model Hunter 🎸 ]] --
+-- [[ BoDcChii Project - v4.5: Logic Rewrite Fix 🎸 ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
@@ -14,14 +14,10 @@ ScreenGui.ResetOnSpawn = false
 
 -- --- 1. ICON TEKS "BD" ---
 local OpenButton = Instance.new("TextButton", ScreenGui)
-OpenButton.Size = UDim2.new(0, 50, 0, 50)
-OpenButton.Position = UDim2.new(0, 20, 0.5, -25)
+OpenButton.Size = UDim2.new(0, 50, 0, 50); OpenButton.Position = UDim2.new(0, 20, 0.5, -25)
 OpenButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-OpenButton.Text = "BD" 
-OpenButton.TextColor3 = Color3.fromRGB(255, 105, 180)
-OpenButton.TextSize = 24
-OpenButton.Font = Enum.Font.SourceSansBold
-OpenButton.ZIndex = 500
+OpenButton.Text = "BD"; OpenButton.TextColor3 = Color3.fromRGB(255, 105, 180)
+OpenButton.TextSize = 24; OpenButton.Font = Enum.Font.SourceSansBold; OpenButton.ZIndex = 500
 Instance.new("UICorner", OpenButton).CornerRadius = UDim.new(0, 12)
 Instance.new("UIStroke", OpenButton).Color = Color3.fromRGB(255, 105, 180)
 
@@ -30,8 +26,7 @@ local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 240, 0, 180)
 MainFrame.Position = UDim2.new(0.5, -120, 0.4, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-MainFrame.Visible = false
-MainFrame.Active = true
+MainFrame.Visible = false; MainFrame.Active = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(255, 105, 180)
 
@@ -43,24 +38,48 @@ local Line = Instance.new("Frame", MainFrame)
 Line.Size = UDim2.new(0.9, 0, 0, 2); Line.Position = UDim2.new(0.05, 0, 0, 40)
 Line.BackgroundColor3 = Color3.fromRGB(255, 105, 180); Line.BorderSizePixel = 0
 
--- --- 3. LOGIKA MODEL HUNTER (SESUAI PANDUANMU) ---
+-- --- 3. REWRITE ESP SYSTEM (SESUAI PANDUAN BARU) ---
 local genActive = false
 
 local function CreateESP(target)
     if not target:FindFirstChild("BochiESP_Gen") then
         local highlight = Instance.new("Highlight")
         highlight.Name = "BochiESP_Gen"
-        highlight.Parent = target
         highlight.FillColor = Color3.fromRGB(0, 255, 255)
-        highlight.OutlineColor = Color3.new(1, 1, 1)
+        highlight.OutlineColor = Color3.new(1,1,1)
+        highlight.FillTransparency = 0.3
         highlight.AlwaysOnTop = true
+        highlight.Parent = target
     end
 end
 
-local function RemoveESP()
-    for _, v in pairs(game.Workspace:GetDescendants()) do
-        if v.Name == "BochiESP_Gen" then v:Destroy() end
+local function IsGenerator(model)
+    -- Deteksi berdasarkan isi (bukan nama)
+    local partCount = 0
+    for _, v in pairs(model:GetDescendants()) do
+        if v:IsA("BasePart") then
+            partCount += 1
+        end
     end
+    
+    -- Minimal kompleks (bukan object kecil random)
+    if partCount < 5 then return false end
+
+    -- Cek ada komponen khas (Tombol E atau Click)
+    if model:FindFirstChildWhichIsA("ProximityPrompt") 
+    or model:FindFirstChildWhichIsA("ClickDetector") then
+        return true
+    end
+
+    -- Cek nama anak (lebih dalam)
+    for _, v in pairs(model:GetDescendants()) do
+        local n = v.Name:lower()
+        if n:find("repair") or n:find("fix") or n:find("progress") then
+            return true
+        end
+    end
+
+    return false
 end
 
 task.spawn(function()
@@ -68,24 +87,24 @@ task.spawn(function()
         if genActive then
             for _, obj in pairs(workspace:GetDescendants()) do
                 if obj:IsA("Model") then
-                    local name = obj.Name:lower()
-                    -- Keyword khusus Violence District
-                    if name:find("gen") or name:find("power") or name:find("repair") then
-                        local part = obj:FindFirstChildWhichIsA("BasePart")
-                        if part then
-                            CreateESP(obj)
-                        end
+                    if IsGenerator(obj) then
+                        CreateESP(obj)
                     end
                 end
             end
         else
-            RemoveESP()
+            -- hapus semua ESP
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v.Name == "BochiESP_Gen" then
+                    v:Destroy()
+                end
+            end
         end
-        task.wait(1) -- Scan cepat tiap 1 detik
+        task.wait(1)
     end
 end)
 
--- --- 4. TOMBOL TOGGLE (HIJAU/MERAH) ---
+-- --- 4. TOMBOL TOGGLE ---
 local GenBtn = Instance.new("TextButton", MainFrame)
 GenBtn.Size = UDim2.new(0.9, 0, 0, 45); GenBtn.Position = UDim2.new(0.05, 0, 0, 60)
 GenBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
@@ -100,7 +119,6 @@ end)
 
 -- --- 5. BUKA/TUTUP & DRAG ---
 OpenButton.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
-
 local Exit = Instance.new("TextButton", MainFrame)
 Exit.Size = UDim2.new(0, 25, 0, 25); Exit.Position = UDim2.new(1, -30, 0, 7); Exit.Text = "X"
 Exit.BackgroundColor3 = Color3.fromRGB(200, 50, 50); Instance.new("UICorner", Exit).CornerRadius = UDim.new(1, 0)
