@@ -1,8 +1,8 @@
--- [[ BoDcChii Project - v2.0: Generator & Pallet ESP 🎸 ]] --
+-- [[ BoDcChii Project - v2.1: Fixed Pallet Button 🎸 ]] --
 
 local UserInputService = game:GetService("UserInputService")
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BoDcChii_Final_v2"
+ScreenGui.Name = "BoDcChii_Final_Fixed_Pallet"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ResetOnSpawn = false
 
@@ -51,59 +51,55 @@ OpenIcon.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.
 
 -- --- 4. SIDEBAR ---
 local Sidebar = Instance.new("Frame", MainFrame)
-Sidebar.Size = UDim2.new(0, 80, 1, 0); Sidebar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Sidebar.Size = UDim2.new(0, 80, 1, 0); Sidebar.BackgroundColor3 = Color3.fromRGB(25, 25, 25); Sidebar.ZIndex = 101
 local TabLabel = Instance.new("TextLabel", Sidebar)
 TabLabel.Size = UDim2.new(1, 0, 0, 45); TabLabel.Text = "1. Player"; TabLabel.TextColor3 = Color3.new(1, 1, 1)
-TabLabel.BackgroundColor3 = Color3.fromRGB(45, 45, 45); TabLabel.Font = Enum.Font.SourceSansBold
+TabLabel.BackgroundColor3 = Color3.fromRGB(45, 45, 45); TabLabel.Font = Enum.Font.SourceSansBold; TabLabel.ZIndex = 102
 
 -- --- 5. LOGIKA ESP ---
 local genESPActive = false
 local palletESPActive = false
-
-local function ApplyESP(obj, name, color)
-    if not obj:FindFirstChild(name) then
-        local h = Instance.new("Highlight", obj)
-        h.Name = name; h.FillColor = color
-        h.OutlineColor = Color3.new(1, 1, 1)
-        h.AlwaysOnTop = true
-    end
-end
-
-local function RemoveESP(name)
-    for _, v in pairs(game.Workspace:GetDescendants()) do
-        if v.Name == name and v:IsA("Highlight") then v:Destroy() end
-    end
-end
 
 task.spawn(function()
     while true do
         if genESPActive then
             for _, v in pairs(game.Workspace:GetDescendants()) do
                 if (v.Name:lower():find("generator") or v.Name:lower():find("gen")) and (v:IsA("Model") or v:IsA("BasePart")) then
-                    ApplyESP(v, "Gen_ESP", Color3.fromRGB(0, 255, 255))
+                    if not v:FindFirstChild("Gen_ESP") then
+                        local h = Instance.new("Highlight", v); h.Name = "Gen_ESP"; h.FillColor = Color3.fromRGB(0, 255, 255); h.AlwaysOnTop = true
+                    end
                 end
             end
-        else RemoveESP("Gen_ESP") end
+        else
+            for _, v in pairs(game.Workspace:GetDescendants()) do if v.Name == "Gen_ESP" then v:Destroy() end end
+        end
         
         if palletESPActive then
             for _, v in pairs(game.Workspace:GetDescendants()) do
                 if v.Name:lower():find("pallet") and (v:IsA("Model") or v:IsA("BasePart")) then
-                    ApplyESP(v, "Pallet_ESP", Color3.fromRGB(255, 255, 0)) -- Kuning untuk Pallet
+                    if not v:FindFirstChild("Pal_ESP") then
+                        local h = Instance.new("Highlight", v); h.Name = "Pal_ESP"; h.FillColor = Color3.fromRGB(255, 255, 0); h.AlwaysOnTop = true
+                    end
                 end
             end
-        else RemoveESP("Pallet_ESP") end
-        
+        else
+            for _, v in pairs(game.Workspace:GetDescendants()) do if v.Name == "Pal_ESP" then v:Destroy() end end
+        end
         task.wait(2.5)
     end
 end)
 
--- --- 6. TOMBOL-TOMBOL ---
+-- --- 6. TOMBOL-TOMBOL (DIHALAMAN PLAYER) ---
 
--- TOMBOL ESP GENERATOR
+-- TOMBOL 1: ESP GENERATOR
 local BtnGen = Instance.new("TextButton", MainFrame)
-BtnGen.Size = UDim2.new(0, 180, 0, 40); BtnGen.Position = UDim2.new(0, 90, 0, 50)
-BtnGen.BackgroundColor3 = Color3.fromRGB(180, 50, 50); BtnGen.Text = "1. ESP Generator: OFF"
-BtnGen.TextColor3 = Color3.new(1, 1, 1); BtnGen.Font = Enum.Font.SourceSansBold; Instance.new("UICorner", BtnGen)
+BtnGen.Size = UDim2.new(0, 180, 0, 40)
+BtnGen.Position = UDim2.new(0, 90, 0, 50) -- POSISI ATAS
+BtnGen.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+BtnGen.Text = "1. ESP Generator: OFF"
+BtnGen.TextColor3 = Color3.new(1, 1, 1)
+BtnGen.ZIndex = 200 -- PAKSA KE DEPAN
+Instance.new("UICorner", BtnGen)
 
 BtnGen.MouseButton1Click:Connect(function()
     genESPActive = not genESPActive
@@ -111,11 +107,15 @@ BtnGen.MouseButton1Click:Connect(function()
     BtnGen.Text = genESPActive and "1. ESP Generator: ON" or "1. ESP Generator: OFF"
 end)
 
--- TOMBOL ESP PALLET
+-- TOMBOL 2: ESP PALLET
 local BtnPallet = Instance.new("TextButton", MainFrame)
-BtnPallet.Size = UDim2.new(0, 180, 0, 40); BtnPallet.Position = UDim2.new(0, 90, 0, 100)
-BtnPallet.BackgroundColor3 = Color3.fromRGB(180, 50, 50); BtnPallet.Text = "2. ESP Pallet: OFF"
-BtnPallet.TextColor3 = Color3.new(1, 1, 1); BtnPallet.Font = Enum.Font.SourceSansBold; Instance.new("UICorner", BtnPallet)
+BtnPallet.Size = UDim2.new(0, 180, 0, 40)
+BtnPallet.Position = UDim2.new(0, 90, 0, 100) -- POSISI BAWAH GENERATOR
+BtnPallet.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+BtnPallet.Text = "2. ESP Pallet: OFF"
+BtnPallet.TextColor3 = Color3.new(1, 1, 1)
+BtnPallet.ZIndex = 200 -- PAKSA KE DEPAN
+Instance.new("UICorner", BtnPallet)
 
 BtnPallet.MouseButton1Click:Connect(function()
     palletESPActive = not palletESPActive
@@ -125,7 +125,7 @@ end)
 
 -- EXIT (X)
 local Exit = Instance.new("TextButton", MainFrame)
-Exit.Size = UDim2.new(0, 30, 0, 30); Exit.Position = UDim2.new(1, -35, 0, 5); Exit.Text = "X"
-Exit.BackgroundColor3 = Color3.new(1, 0, 0); Exit.TextColor3 = Color3.new(1, 1, 1)
+Exit.Size = UDim2.new(0, 25, 0, 25); Exit.Position = UDim2.new(1, -30, 0, 5); Exit.Text = "X"
+Exit.BackgroundColor3 = Color3.new(1, 0, 0); Exit.ZIndex = 300
 Exit.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 Instance.new("UICorner", Exit).CornerRadius = UDim.new(1, 0)
