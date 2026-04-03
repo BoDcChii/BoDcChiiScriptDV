@@ -1,8 +1,8 @@
--- [[ BoDcChii Project - v2.4: Deep Scan & Box ESP 🎸 ]] --
+-- [[ BoDcChii Project - v2.5: Violence District Special 🎸 ]] --
 
 local UserInputService = game:GetService("UserInputService")
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BoDcChii_DeepScan_v2"
+ScreenGui.Name = "BoDcChii_Violence_Fix"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ResetOnSpawn = false
 
@@ -24,7 +24,15 @@ local function MakeDraggable(obj)
     end)
 end
 
--- --- 1. MENU BASE ---
+-- --- 1. WELCOME (BACK!) ---
+local Welcome = Instance.new("TextLabel", ScreenGui)
+Welcome.Size = UDim2.new(1, 0, 0, 60); Welcome.Position = UDim2.new(0, 0, 0.4, 0)
+Welcome.BackgroundColor3 = Color3.new(0, 0, 0); Welcome.BackgroundTransparency = 0.5
+Welcome.Text = "Welcome by @BoDcChii 😈"; Welcome.TextColor3 = Color3.fromRGB(255, 105, 180)
+Welcome.TextSize = 35; Welcome.ZIndex = 1000
+task.delay(2.5, function() Welcome:Destroy() end)
+
+-- --- 2. ICON & MAIN FRAME ---
 local OpenIcon = Instance.new("ImageButton", ScreenGui)
 OpenIcon.Size = UDim2.new(0, 45, 0, 45); OpenIcon.Position = UDim2.new(0, 20, 0.5, 0)
 OpenIcon.BackgroundColor3 = Color3.fromRGB(20, 20, 20); OpenIcon.Image = "rbxassetid://12130312683"
@@ -41,7 +49,7 @@ MakeDraggable(MainFrame)
 
 OpenIcon.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- --- 2. SIDEBAR & LAYOUT ---
+-- --- 3. SIDEBAR & BUTTONS ---
 local Sidebar = Instance.new("Frame", MainFrame)
 Sidebar.Size = UDim2.new(0, 80, 1, 0); Sidebar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 local TabLabel = Instance.new("TextLabel", Sidebar)
@@ -53,71 +61,70 @@ ButtonHolder.Position = UDim2.new(0, 90, 0, 45); ButtonHolder.Size = UDim2.new(1
 ButtonHolder.BackgroundTransparency = 1
 local Layout = Instance.new("UIListLayout", ButtonHolder); Layout.Padding = UDim.new(0, 10)
 
--- --- 3. LOGIKA ESP TERKUAT (BOX + HIGHLIGHT) ---
-local genActive = false
-local palActive = false
+-- --- 4. LOGIKA ESP VIOLENCE DISTRICT ---
+local genActive, palActive = false, false
 
-local function CreateESP(obj, name, color)
+local function CreateViolenceESP(obj, name, color, labelText)
     if not obj:FindFirstChild(name) then
-        -- 1. Cahaya (Highlight)
-        local h = Instance.new("Highlight", obj)
-        h.Name = name; h.FillColor = color; h.AlwaysOnTop = true
-        
-        -- 2. Kotak Neon (Box) - Backup jika Highlight gagal
+        -- Box ESP (Neon Kotak)
         local b = Instance.new("BoxHandleAdornment", obj)
-        b.Name = name.."_Box"; b.Adornee = obj; b.AlwaysOnTop = true
-        b.ZIndex = 10; b.Size = (obj:IsA("Model") and obj:GetExtentsSize() or obj.Size)
-        b.Color3 = color; b.Transparency = 0.6
+        b.Name = name; b.Adornee = obj; b.AlwaysOnTop = true; b.ZIndex = 5
+        b.Size = (obj:IsA("Model") and obj:GetExtentsSize() or obj.Size)
+        b.Color3 = color; b.Transparency = 0.7
+        
+        -- Text ESP (Nama Melayang)
+        local bill = Instance.new("BillboardGui", obj)
+        bill.Name = name.."_Label"; bill.Size = UDim2.new(0, 100, 0, 50); bill.AlwaysOnTop = true; bill.ExtentsOffset = Vector3.new(0, 3, 0)
+        local txt = Instance.new("TextLabel", bill)
+        txt.Size = UDim2.new(1, 0, 1, 0); txt.BackgroundTransparency = 1; txt.Text = labelText
+        txt.TextColor3 = color; txt.TextStrokeTransparency = 0; txt.TextSize = 14; txt.Font = Enum.Font.SourceSansBold
     end
 end
 
-local function ClearESP(name)
-    for _, v in pairs(game:GetDescendants()) do
-        if v.Name == name or v.Name == name.."_Box" then v:Destroy() end
+local function ClearViolenceESP(name)
+    for _, v in pairs(game.Workspace:GetDescendants()) do
+        if v.Name == name or v.Name == name.."_Label" then v:Destroy() end
     end
 end
 
 task.spawn(function()
     while true do
         if genActive or palActive then
-            -- Scan Workspace secara menyeluruh
-            for _, v in pairs(workspace:GetDescendants()) do
+            for _, v in pairs(game.Workspace:GetDescendants()) do
                 if v:IsA("Model") or v:IsA("BasePart") then
-                    local lowName = v.Name:lower()
-                    -- Cek Generator
-                    if genActive and (lowName:find("gen") or lowName:find("motor") or lowName:find("engine") or lowName:find("machine")) then
-                        CreateESP(v, "Bocchi_Gen", Color3.fromRGB(0, 255, 255))
+                    local n = v.Name:lower()
+                    -- Cek Generator di Violence District
+                    if genActive and (n:find("generator") or n:find("gen") or n:find("engine")) then
+                        CreateViolenceESP(v, "VD_Gen", Color3.fromRGB(0, 255, 255), "GENERATOR")
                     end
-                    -- Cek Pallet
-                    if palActive and (lowName:find("pallet") or lowName:find("board") or lowName:find("wood")) then
-                        CreateESP(v, "Bocchi_Pal", Color3.fromRGB(255, 255, 0))
+                    -- Cek Pallet di Violence District
+                    if palActive and (n:find("pallet") or n:find("wood") or n:find("board")) then
+                        CreateViolenceESP(v, "VD_Pal", Color3.fromRGB(255, 255, 0), "PALLET")
                     end
                 end
             end
         end
-        task.wait(3)
+        task.wait(4) -- Scan stabil untuk HP
     end
 end)
 
--- --- 4. TOMBOL TOGGLE ---
-local function CreateToggle(text, callback, espName)
+-- --- 5. TOMBOL TOGGLE (HIJAU/MERAH) ---
+local function CreateBtn(txt, callback, espName)
     local b = Instance.new("TextButton", ButtonHolder)
     b.Size = UDim2.new(1, 0, 0, 45); b.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-    b.Text = text..": OFF"; b.TextColor3 = Color3.new(1, 1, 1); b.Font = Enum.Font.SourceSansBold
-    Instance.new("UICorner", b)
-    
-    local state = false
+    b.Text = txt..": OFF"; b.TextColor3 = Color3.new(1, 1, 1); b.Font = Enum.Font.SourceSansBold; Instance.new("UICorner", b)
+    local s = false
     b.MouseButton1Click:Connect(function()
-        state = not state
-        b.BackgroundColor3 = state and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(180, 50, 50)
-        b.Text = state and text..": ON" or text..": OFF"
-        callback(state)
-        if not state then ClearESP(espName) end
+        s = not s
+        b.BackgroundColor3 = s and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(180, 50, 50)
+        b.Text = s and txt..": ON" or txt..": OFF"
+        callback(s)
+        if not s then ClearViolenceESP(espName) end
     end)
 end
 
-CreateToggle("1. ESP Generator", function(s) genActive = s end, "Bocchi_Gen")
-CreateToggle("2. ESP Pallet", function(s) palActive = s end, "Bocchi_Pal")
+CreateBtn("1. ESP Generator", function(s) genActive = s end, "VD_Gen")
+CreateBtn("2. ESP Pallet", function(s) palActive = s end, "VD_Pal")
 
 -- EXIT
 local Exit = Instance.new("TextButton", MainFrame)
