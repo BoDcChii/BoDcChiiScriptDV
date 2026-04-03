@@ -1,5 +1,5 @@
 -- [[ BoDcChii Project - v4.1: Minimalist BD 🎸 ]] --
--- Update: Added Separate ESP (Survivor: Green | Killer: Red)
+-- Perbaikan: Tombol Killer & Deteksi Warna Merah
 
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
@@ -26,15 +26,14 @@ OpenButton.TextSize = 24
 OpenButton.Font = Enum.Font.SourceSansBold
 OpenButton.ZIndex = 500
 
-local IconCorner = Instance.new("UICorner", OpenButton)
-IconCorner.CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", OpenButton).CornerRadius = UDim.new(0, 12)
 local IconStroke = Instance.new("UIStroke", OpenButton)
 IconStroke.Color = Color3.fromRGB(255, 105, 180)
 IconStroke.Thickness = 2
 
 -- --- 2. HALAMAN FITUR ---
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 240, 0, 220) -- Ukuran disesuaikan untuk 2 tombol
+MainFrame.Size = UDim2.new(0, 240, 0, 200) -- Ukuran pas untuk 2 tombol
 MainFrame.Position = UDim2.new(0.5, -120, 0.4, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.Visible = false
@@ -53,69 +52,72 @@ Header.BackgroundTransparency = 1
 Header.Font = Enum.Font.SourceSansBold
 Header.TextSize = 18
 
--- --- 3. LOGIKA ESP (SURVIVOR & KILLER) ---
+-- --- 3. LOGIKA DETEKSI & TOMBOL ESP ---
 local SurvivorEnabled = false
 local KillerEnabled = false
 
--- Fungsi cek apakah pemain adalah Killer (Berdasarkan Tool/Senjata)
+-- Fungsi Deteksi Killer yang lebih kuat
 local function IsKiller(player)
-    -- Biasanya Killer punya tool "Knife" atau "Weapon" di Backpack atau Character
-    if player.Backpack:FindFirstChild("Knife") or player.Backpack:FindFirstChild("Weapon") or 
-       (player.Character and (player.Character:FindFirstChild("Knife") or player.Character:FindFirstChild("Weapon"))) then
+    local char = player.Character
+    if not char then return false end
+    
+    -- Cek jika memegang senjata atau punya status "Killer"
+    local hasWeapon = char:FindFirstChildOfClass("Tool") or player.Backpack:FindFirstChildOfClass("Tool")
+    local hasKillerTag = char:FindFirstChild("Killer") or char:FindFirstChild("IsKiller")
+    
+    if hasWeapon or hasKillerTag then
         return true
     end
     return false
 end
 
-local function CreateESP(btn, text, colorOn)
-    btn.Size = UDim2.new(0.8, 0, 0, 35)
-    btn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.Font = Enum.Font.SourceSansBold
-    btn.TextSize = 14
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-end
-
--- Tombol ESP Survivor
+-- Tombol ESP Survivor (HIJAU)
 local SurvBtn = Instance.new("TextButton", MainFrame)
-SurvBtn.Name = "SurvBtn"
+SurvBtn.Size = UDim2.new(0.85, 0, 0, 35)
+SurvBtn.Position = UDim2.new(0.075, 0, 0, 60)
+SurvBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 SurvBtn.Text = "ESP Survivor: OFF"
-SurvBtn.Position = UDim2.new(0.1, 0, 0, 60)
-CreateESP(SurvBtn)
+SurvBtn.TextColor3 = Color3.new(1, 1, 1)
+SurvBtn.Font = Enum.Font.SourceSansBold
+SurvBtn.TextSize = 14
+Instance.new("UICorner", SurvBtn).CornerRadius = UDim.new(0, 6)
 
--- Tombol ESP Killer
+-- Tombol ESP Killer (MERAH)
 local KillBtn = Instance.new("TextButton", MainFrame)
-KillBtn.Name = "KillBtn"
+KillBtn.Size = UDim2.new(0.85, 0, 0, 35)
+KillBtn.Position = UDim2.new(0.075, 0, 0, 105) -- Posisi di bawah tombol Survivor
+KillBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 KillBtn.Text = "ESP Killer: OFF"
-KillBtn.Position = UDim2.new(0.1, 0, 0, 105)
-CreateESP(KillBtn)
+KillBtn.TextColor3 = Color3.new(1, 1, 1)
+KillBtn.Font = Enum.Font.SourceSansBold
+KillBtn.TextSize = 14
+Instance.new("UICorner", KillBtn).CornerRadius = UDim.new(0, 6)
 
--- Update Loop
+-- Loop ESP
 RunService.RenderStepped:Connect(function()
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= Players.LocalPlayer and p.Character then
-            local hl = p.Character:FindFirstChild("BDEsp")
-            
-            if not hl then
-                hl = Instance.new("Highlight")
-                hl.Name = "BDEsp"
-                hl.Parent = p.Character
-                hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-                hl.FillTransparency = 0.5
+            local highlight = p.Character:FindFirstChild("BDEsp")
+            if not highlight then
+                highlight = Instance.new("Highlight", p.Character)
+                highlight.Name = "BDEsp"
+                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
             end
 
-            -- Logika Pemisahan Warna
             if IsKiller(p) then
-                hl.FillColor = Color3.fromRGB(255, 0, 0) -- Merah untuk Killer
-                hl.Enabled = KillerEnabled
+                -- Setting untuk Killer
+                highlight.FillColor = Color3.fromRGB(255, 0, 0) -- MERAH
+                highlight.Enabled = KillerEnabled
             else
-                hl.FillColor = Color3.fromRGB(0, 255, 0) -- Hijau untuk Survivor
-                hl.Enabled = SurvivorEnabled
+                -- Setting untuk Survivor
+                highlight.FillColor = Color3.fromRGB(0, 255, 0) -- HIJAU
+                highlight.Enabled = SurvivorEnabled
             end
         end
     end
 end)
 
+-- Event Klik Tombol
 SurvBtn.MouseButton1Click:Connect(function()
     SurvivorEnabled = not SurvivorEnabled
     SurvBtn.Text = SurvivorEnabled and "ESP Survivor: ON" or "ESP Survivor: OFF"
@@ -128,7 +130,7 @@ KillBtn.MouseButton1Click:Connect(function()
     KillBtn.BackgroundColor3 = KillerEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
 end)
 
--- --- 4. LOGIKA BUKA/TUTUP ---
+-- --- 4. SISTEM MENU ---
 OpenButton.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
@@ -140,24 +142,19 @@ Exit.Text = "X"
 Exit.TextColor3 = Color3.new(1, 1, 1)
 Exit.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 Instance.new("UICorner", Exit).CornerRadius = UDim.new(1, 0)
+Exit.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
-Exit.MouseButton1Click:Connect(function()
-    MainFrame.Visible = false
-end)
-
--- --- 5. DRAG SYSTEM UNTUK ICON ---
+-- --- 5. DRAG SYSTEM ---
 local dragging, dragStart, startPos
 OpenButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true; dragStart = input.Position; startPos = OpenButton.Position
     end
 end)
-
 UIS.InputChanged:Connect(function(input)
     if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
         local delta = input.Position - dragStart
         OpenButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
-
 UIS.InputEnded:Connect(function(input) dragging = false end)
