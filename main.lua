@@ -1,7 +1,7 @@
--- [[ BoDcChii VD Helper v2.9 - Bug Fix & Optimized ESP 😈 ]] --
+-- [[ BoDcChii VD Helper v3.0 - Stable & No Glitch 😈 ]] --
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BoDcChii_v29"
+ScreenGui.Name = "BoDcChii_Stable"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ResetOnSpawn = false
 
@@ -19,7 +19,7 @@ local IconCorner = Instance.new("UICorner")
 IconCorner.CornerRadius = UDim.new(1, 0)
 IconCorner.Parent = OpenIcon
 
--- 2. MAIN FRAME (Optimal Size)
+-- 2. MAIN FRAME
 local MainFrame = Instance.new("Frame")
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -59,7 +59,7 @@ local SurPage = CreatePage("SUR", true)
 local KlrPage = CreatePage("KLR", false)
 local EspPage = CreatePage("ESP", false)
 
--- --- HELPER FUNCTIONS ---
+-- --- FUNGSI TOGGLE ---
 local function CreateToggleButton(parent, text, offColor, callback)
     local IsActive = false
     local Btn = Instance.new("TextButton")
@@ -76,67 +76,71 @@ local function CreateToggleButton(parent, text, offColor, callback)
     return Btn
 end
 
--- --- CORE ENGINE ---
+-- --- CORE FUNCTIONS (LIGHTWEIGHT) ---
 
--- 1. AUTO PERFECT (Low Impact Scan)
-local function AutoSkillCheck(state)
-    _G.AutoSkillActive = state
-    task.spawn(function()
-        while _G.AutoSkillActive do
-            task.wait(0.05) -- Kurangi speed scan biar nggak ngebug UI
-            local PlayerGui = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
-            if PlayerGui then
-                -- Cari objek spesifik yang biasanya ada di VD
-                for _, v in pairs(PlayerGui:GetDescendants()) do
-                    if v:IsA("Frame") and v.Visible and (v.Name:find("Success") or v.Name:find("Skill")) then
-                        game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.Space, false, game)
-                        task.wait(0.01)
-                        game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.Space, false, game)
-                        task.wait(0.2)
-                    end
-                end
-            end
-        end
-    end)
-end
-
--- 2. ESP PLAYER (Safe Loop)
-local function PlayerESP(state, mode, color)
-    if not state then
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v.Name == "BD_Highlight" then v:Destroy() end
-        end
-        return
-    end
-
-    task.spawn(function()
-        while state do
-            task.wait(1) -- Update tiap 1 detik saja biar enteng
+-- 1. FUNGSI ESP PLAYER (PAKAI TEKS BIAR RINGAN)
+local function SimpleESP(state, targetType, color)
+    -- targetType: 1 = Killer, 2 = Survivor
+    if state then
+        _G.ESP_Loop = game:GetService("RunService").Heartbeat:Connect(function()
             for _, p in pairs(game.Players:GetPlayers()) do
-                if p ~= game.Players.LocalPlayer and p.Character then
-                    local isKiller = (p.TeamColor == game.Teams.Killer.TeamColor) or p.Character:FindFirstChild("Knife")
-                    
-                    if (mode == 1 and isKiller) or (mode == 2 and not isKiller) then
-                        local hi = p.Character:FindFirstChild("BD_Highlight") or Instance.new("Highlight")
-                        hi.Name = "BD_Highlight"; hi.Parent = p.Character; hi.FillColor = color; hi.FillTransparency = 0.5
+                if p ~= game.Players.LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+                    local isKiller = false
+                    if p.Team and (p.Team.Name:lower():find("killer") or p.Team.Name:lower():find("slasher")) then
+                        isKiller = true
+                    end
+
+                    if (targetType == 1 and isKiller) or (targetType == 2 and not isKiller) then
+                        if not p.Character.Head:FindFirstChild("BD_Tag") then
+                            local tag = Instance.new("BillboardGui")
+                            tag.Name = "BD_Tag"
+                            tag.Parent = p.Character.Head
+                            tag.Size = UDim2.new(0, 100, 0, 50)
+                            tag.Adornee = p.Character.Head
+                            tag.AlwaysOnTop = true
+                            tag.ExtentsOffset = Vector3.new(0, 3, 0)
+
+                            local label = Instance.new("TextLabel")
+                            label.Parent = tag
+                            label.BackgroundTransparency = 1
+                            label.Size = UDim2.new(1, 0, 1, 0)
+                            label.Text = isKiller and "⚠️ KILLER ⚠️" or "👤 SURVIVOR"
+                            label.TextColor3 = color
+                            label.TextStrokeTransparency = 0
+                            label.Font = Enum.Font.SourceSansBold
+                            label.TextSize = 14
+                        end
+                    else
+                        if p.Character.Head:FindFirstChild("BD_Tag") then p.Character.Head.BD_Tag:Destroy() end
                     end
                 end
             end
-            if not _G.ESP_Running then break end
+        end)
+    else
+        if _G.ESP_Loop then _G.ESP_Loop:Disconnect() end
+        for _, p in pairs(game.Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("Head") and p.Character.Head:FindFirstChild("BD_Tag") then
+                p.Character.Head.BD_Tag:Destroy()
+            end
         end
-    end)
+    end
 end
 
--- --- UI SETUP ---
-CreateToggleButton(SurPage, "Perfect Gen", Color3.fromRGB(200, 50, 50), function(s) AutoSkillCheck(s) end)
-CreateToggleButton(SurPage, "Perfect Heal", Color3.fromRGB(200, 50, 50), function(s) AutoSkillCheck(s) end)
-CreateToggleButton(SurPage, "ESP Killer", Color3.fromRGB(200, 50, 50), function(s) _G.ESP_Running = s; PlayerESP(s, 1, Color3.new(1, 0, 0)) end)
+-- --- SETUP TOMBOL ---
+CreateToggleButton(SurPage, "Perfect Gen (Disabled)", Color3.fromRGB(100, 100, 100), function(s) 
+    print("Fitur dimatikan sementara agar tidak bug UI")
+end)
 
-CreateToggleButton(KlrPage, "ESP Survival", Color3.fromRGB(200, 50, 50), function(s) _G.ESP_Running = s; PlayerESP(s, 2, Color3.new(0, 1, 0)) end)
+CreateToggleButton(SurPage, "ESP Killer", Color3.fromRGB(200, 50, 50), function(s) 
+    SimpleESP(s, 1, Color3.fromRGB(255, 0, 0)) 
+end)
+
+CreateToggleButton(KlrPage, "ESP Survival", Color3.fromRGB(200, 50, 50), function(s) 
+    SimpleESP(s, 2, Color3.fromRGB(0, 255, 0)) 
+end)
 
 CreateToggleButton(EspPage, "Full Bright", Color3.fromRGB(200, 50, 50), function(s)
     game:GetService("Lighting").Brightness = s and 2 or 1
-    game:GetService("Lighting").GlobalShadows = not s
 end)
 
 -- --- NAVIGASI ---
