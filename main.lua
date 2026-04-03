@@ -1,7 +1,7 @@
--- [[ BoDcChii VD Helper v3.3 - Color Lock Fix 😈 ]] --
+-- [[ BoDcChii VD Helper v3.4 - Deep Isolation Fix 😈 ]] --
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BoDcChii_ColorFix"
+ScreenGui.Name = "BoDcChii_Isolated"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ResetOnSpawn = false
 
@@ -76,96 +76,108 @@ local function CreateToggleButton(parent, text, offColor, callback)
     return Btn
 end
 
--- --- CORE FUNCTIONS (FIXED COLORS) ---
+-- --- CORE ENGINE (ISOLATED MODE) ---
 
--- Fungsi untuk cek siapa pembunuhnya
-local function GetIsKiller(p)
-    if p.Character and (p.Character:FindFirstChild("Knife") or p.Character:FindFirstChild("Weapon")) then
-        return true
-    end
-    if p.Team and (p.Team.Name:lower():find("killer") or p.Team.Name:lower():find("slasher")) then
-        return true
-    end
-    return false
-end
-
--- 1. PLAYER ESP (FIXED COLOR LOGIC)
-local function PlayerESP(state, mode, color)
-    -- mode: 1 = Mau liat Killer (Merah), 2 = Mau liat Survivor (Hijau)
+-- A. SISTEM KILLER (MERAH)
+local function KillerESP(state)
+    _G.KillerActive = state
     if state then
-        _G["Loop_"..mode] = game:GetService("RunService").Heartbeat:Connect(function()
-            for _, p in pairs(game.Players:GetPlayers()) do
-                if p ~= game.Players.LocalPlayer and p.Character then
-                    local isKiller = GetIsKiller(p)
-                    
-                    -- Kunci Warna: Hanya buat ESP jika perannya sesuai target
-                    if (mode == 1 and isKiller) or (mode == 2 and not isKiller) then
-                        local hi = p.Character:FindFirstChild("BD_Highlight") or Instance.new("Highlight")
-                        hi.Name = "BD_Highlight"
-                        hi.Parent = p.Character
-                        hi.FillColor = color
-                        hi.OutlineColor = Color3.new(1, 1, 1)
-                        hi.FillTransparency = 0.4
-                    else
-                        -- Hapus ESP jika perannya tidak sesuai (cegah warna berubah-ubah)
-                        if p.Character:FindFirstChild("BD_Highlight") and not state then
-                             p.Character.BD_Highlight:Destroy()
+        task.spawn(function()
+            while _G.KillerActive do
+                task.wait(0.5)
+                for _, p in pairs(game.Players:GetPlayers()) do
+                    if p ~= game.Players.LocalPlayer and p.Character then
+                        -- Deteksi Killer berdasarkan Tim atau Senjata
+                        local isK = (p.Team and p.Team.Name:lower():find("killer")) or p.Character:FindFirstChild("Knife") or p.Character:FindFirstChild("Weapon")
+                        
+                        if isK then
+                            local hi = p.Character:FindFirstChild("BD_Killer_ESP") or Instance.new("Highlight")
+                            hi.Name = "BD_Killer_ESP"
+                            hi.Parent = p.Character
+                            hi.FillColor = Color3.fromRGB(255, 0, 0) -- MERAH MATI
+                            hi.OutlineColor = Color3.new(1,1,1)
+                            hi.FillTransparency = 0.4
+                        else
+                            if p.Character:FindFirstChild("BD_Killer_ESP") then p.Character.BD_Killer_ESP:Destroy() end
                         end
                     end
                 end
             end
         end)
     else
-        if _G["Loop_"..mode] then _G["Loop_"..mode]:Disconnect() end
         for _, p in pairs(game.Players:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("BD_Highlight") then
-                p.Character.BD_Highlight:Destroy()
-            end
+            if p.Character and p.Character:FindFirstChild("BD_Killer_ESP") then p.Character.BD_Killer_ESP:Destroy() end
         end
     end
 end
 
--- 2. OBJECT ESP (GEN & PALLET)
-local function ObjectESP(state, nameKey, color)
+-- B. SISTEM SURVIVOR (HIJAU)
+local function SurvivalESP(state)
+    _G.SurviActive = state
     if state then
-        _G["Obj_"..nameKey] = game:GetService("RunService").Heartbeat:Connect(function()
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v.Name:find(nameKey) or (v.Parent and v.Parent.Name:find(nameKey)) then
-                    if not v:FindFirstChild("BD_ObjESP") then
-                        local hi = Instance.new("Highlight")
-                        hi.Name = "BD_ObjESP"; hi.Parent = v; hi.FillColor = color; hi.FillTransparency = 0.5
+        task.spawn(function()
+            while _G.SurviActive do
+                task.wait(0.5)
+                for _, p in pairs(game.Players:GetPlayers()) do
+                    if p ~= game.Players.LocalPlayer and p.Character then
+                        -- Deteksi Survivor (Bukan Killer)
+                        local isK = (p.Team and p.Team.Name:lower():find("killer")) or p.Character:FindFirstChild("Knife") or p.Character:FindFirstChild("Weapon")
+                        
+                        if not isK then
+                            local hi = p.Character:FindFirstChild("BD_Survi_ESP") or Instance.new("Highlight")
+                            hi.Name = "BD_Survi_ESP"
+                            hi.Parent = p.Character
+                            hi.FillColor = Color3.fromRGB(0, 255, 0) -- HIJAU MATI
+                            hi.OutlineColor = Color3.new(1,1,1)
+                            hi.FillTransparency = 0.4
+                        else
+                            if p.Character:FindFirstChild("BD_Survi_ESP") then p.Character.BD_Survi_ESP:Destroy() end
+                        end
                     end
                 end
             end
         end)
     else
-        if _G["Obj_"..nameKey] then _G["Obj_"..nameKey]:Disconnect() end
+        for _, p in pairs(game.Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("BD_Survi_ESP") then p.Character.BD_Survi_ESP:Destroy() end
+        end
+    end
+end
+
+-- C. SISTEM OBJECT (GEN & PALLET)
+local function ObjectESP(state, key, color)
+    _G["Obj_"..key] = state
+    if state then
+        task.spawn(function()
+            while _G["Obj_"..key] do
+                task.wait(1)
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v.Name:find(key) or (v.Parent and v.Parent.Name:find(key)) then
+                        if not v:FindFirstChild("BD_Obj_ESP") then
+                            local hi = Instance.new("Highlight")
+                            hi.Name = "BD_Obj_ESP"; hi.Parent = v; hi.FillColor = color; hi.FillTransparency = 0.5
+                        end
+                    end
+                end
+            end
+        end)
+    else
         for _, v in pairs(workspace:GetDescendants()) do
-            if v:FindFirstChild("BD_ObjESP") then v.BD_ObjESP:Destroy() end
+            if v:FindFirstChild("BD_Obj_ESP") then v.BD_Obj_ESP:Destroy() end
         end
     end
 end
 
 -- --- SETUP TOMBOL ---
-CreateToggleButton(SurPage, "ESP Killer", Color3.fromRGB(200, 50, 50), function(s) 
-    PlayerESP(s, 1, Color3.fromRGB(255, 0, 0)) -- MERAH MURNI
-end)
+CreateToggleButton(SurPage, "ESP Killer", Color3.fromRGB(200, 50, 50), function(s) KillerESP(s) end)
 
-CreateToggleButton(KlrPage, "ESP Survival", Color3.fromRGB(200, 50, 50), function(s) 
-    PlayerESP(s, 2, Color3.fromRGB(0, 255, 0)) -- HIJAU MURNI
-end)
+CreateToggleButton(KlrPage, "ESP Survival", Color3.fromRGB(200, 50, 50), function(s) SurvivalESP(s) end)
 
 CreateToggleButton(EspPage, "Full Bright", Color3.fromRGB(200, 50, 50), function(s)
     game:GetService("Lighting").Brightness = s and 2 or 1
 end)
-
-CreateToggleButton(EspPage, "ESP Generator", Color3.fromRGB(200, 50, 50), function(s)
-    ObjectESP(s, "Generator", Color3.fromRGB(255, 255, 0)) -- KUNING
-end)
-
-CreateToggleButton(EspPage, "ESP Pallet", Color3.fromRGB(200, 50, 50), function(s)
-    ObjectESP(s, "Pallet", Color3.fromRGB(255, 255, 0)) -- KUNING
-end)
+CreateToggleButton(EspPage, "ESP Generator", Color3.fromRGB(200, 50, 50), function(s) ObjectESP(s, "Generator", Color3.new(1,1,0)) end)
+CreateToggleButton(EspPage, "ESP Pallet", Color3.fromRGB(200, 50, 50), function(s) ObjectESP(s, "Pallet", Color3.new(1,1,0)) end)
 
 -- --- NAVIGASI ---
 local function CreateTabBtn(pos, text, page)
