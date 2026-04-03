@@ -1,5 +1,5 @@
 -- [[ BoDcChii Project - v4.1: Minimalist BD 🎸 ]] --
--- Perbaikan: Pemisahan Logika Tombol & Prioritas Warna Merah
+-- Fix: Pemisahan Total Tombol & Warna Merah Killer
 
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
@@ -47,27 +47,23 @@ Header.BackgroundTransparency = 1
 Header.Font = Enum.Font.SourceSansBold
 Header.TextSize = 18
 
--- --- 3. LOGIKA ESP (SURVIVOR & KILLER) ---
-local SurvivorEnabled = false
-local KillerEnabled = false
+-- --- 3. LOGIKA ESP ---
+local _SurvOn = false
+local _KillOn = false
 
--- Fungsi Deteksi Killer (Mendeteksi senjata/knife/folder killer)
-local function CheckIfKiller(player)
-    local char = player.Character
+-- Fungsi Deteksi Killer (Berdasarkan Tool/Backpack)
+local function GetIsKiller(p)
+    local char = p.Character
     if not char then return false end
+    -- Cek Senjata (Biasanya Killer punya Tool di tangan atau Backpack)
+    local hasWeapon = char:FindFirstChildOfClass("Tool") or p.Backpack:FindFirstChildOfClass("Tool")
+    -- Cek Tag (Beberapa game District pakai Tag "Killer")
+    local tag = char:FindFirstChild("Killer") or p:FindFirstChild("Killer")
     
-    -- Cek Tool yang sedang dipegang atau ada di tas
-    local tool = char:FindFirstChildOfClass("Tool") or player.Backpack:FindFirstChildOfClass("Tool")
-    -- Cek Folder atau Tag "Killer" yang biasa ada di game District
-    local folder = char:FindFirstChild("Killer") or player:FindFirstChild("Killer")
-    
-    if tool or folder then
-        return true
-    end
-    return false
+    return (hasWeapon or tag)
 end
 
--- Tombol ESP Survivor
+-- Tombol ESP Survivor (HIJAU)
 local SurvBtn = Instance.new("TextButton", MainFrame)
 SurvBtn.Size = UDim2.new(0.85, 0, 0, 35)
 SurvBtn.Position = UDim2.new(0.075, 0, 0, 60)
@@ -77,7 +73,7 @@ SurvBtn.TextColor3 = Color3.new(1, 1, 1)
 SurvBtn.Font = Enum.Font.SourceSansBold
 Instance.new("UICorner", SurvBtn)
 
--- Tombol ESP Killer
+-- Tombol ESP Killer (MERAH)
 local KillBtn = Instance.new("TextButton", MainFrame)
 KillBtn.Size = UDim2.new(0.85, 0, 0, 35)
 KillBtn.Position = UDim2.new(0.075, 0, 0, 105)
@@ -87,47 +83,45 @@ KillBtn.TextColor3 = Color3.new(1, 1, 1)
 KillBtn.Font = Enum.Font.SourceSansBold
 Instance.new("UICorner", KillBtn)
 
--- Loop Render (Sangat Penting: Memisahkan Logika)
+-- Render Loop (Prioritas Pemisahan)
 RunService.RenderStepped:Connect(function()
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= Players.LocalPlayer and p.Character then
-            local hl = p.Character:FindFirstChild("BDEsp")
-            if not hl then
-                hl = Instance.new("Highlight", p.Character)
-                hl.Name = "BDEsp"
-                hl.OutlineColor = Color3.new(1, 1, 1)
+            local highlight = p.Character:FindFirstChild("BDEsp")
+            if not highlight then
+                highlight = Instance.new("Highlight", p.Character)
+                highlight.Name = "BDEsp"
+                highlight.OutlineColor = Color3.new(1, 1, 1)
             end
 
-            -- PRIORITAS LOGIKA:
-            local isKiller = CheckIfKiller(p)
-
-            if isKiller then
-                -- Jika dia Killer, dia HANYA aktif kalau tombol Killer ON
-                hl.FillColor = Color3.fromRGB(255, 0, 0) -- MERAH
-                hl.Enabled = KillerEnabled
+            -- LOGIKA PEMISAHAN TOTAL
+            if GetIsKiller(p) then
+                -- KILLER: Warna Merah & Hanya aktif lewat Tombol Killer
+                highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                highlight.Enabled = _KillOn
             else
-                -- Jika dia Survivor, dia HANYA aktif kalau tombol Survivor ON
-                hl.FillColor = Color3.fromRGB(0, 255, 0) -- HIJAU
-                hl.Enabled = SurvivorEnabled
+                -- SURVIVOR: Warna Hijau & Hanya aktif lewat Tombol Survivor
+                highlight.FillColor = Color3.fromRGB(0, 255, 0)
+                highlight.Enabled = _SurvOn
             end
         end
     end
 end)
 
--- Event Klik Tombol
+-- Click Events
 SurvBtn.MouseButton1Click:Connect(function()
-    SurvivorEnabled = not SurvivorEnabled
-    SurvBtn.Text = SurvivorEnabled and "ESP Survivor: ON" or "ESP Survivor: OFF"
-    SurvBtn.BackgroundColor3 = SurvivorEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+    _SurvOn = not _SurvOn
+    SurvBtn.Text = _SurvOn and "ESP Survivor: ON" or "ESP Survivor: OFF"
+    SurvBtn.BackgroundColor3 = _SurvOn and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
 end)
 
 KillBtn.MouseButton1Click:Connect(function()
-    KillerEnabled = not KillerEnabled
-    KillBtn.Text = KillerEnabled and "ESP Killer: ON" or "ESP Killer: OFF"
-    KillBtn.BackgroundColor3 = KillerEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+    _KillOn = not _KillOn
+    KillBtn.Text = _KillOn and "ESP Killer: ON" or "ESP Killer: OFF"
+    KillBtn.BackgroundColor3 = _KillOn and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
 end)
 
--- --- 4. SISTEM MENU ---
+-- --- 4. SISTEM MENU & DRAG ---
 OpenButton.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 local Exit = Instance.new("TextButton", MainFrame)
 Exit.Size = UDim2.new(0, 25, 0, 25)
@@ -138,7 +132,6 @@ Exit.TextColor3 = Color3.new(1, 1, 1)
 Instance.new("UICorner", Exit).CornerRadius = UDim.new(1, 0)
 Exit.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
--- --- 5. DRAG SYSTEM ---
 local dragging, dragStart, startPos
 OpenButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
