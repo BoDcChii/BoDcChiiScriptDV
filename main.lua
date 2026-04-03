@@ -1,5 +1,5 @@
 -- [[ BoDcChii Project - v4.1: Minimalist BD 🎸 ]] --
--- Fix: Pemisahan Total Tombol & Warna Merah Killer
+-- Fix: Deteksi Berdasarkan Role (Bukan Senjata) agar tidak tertukar
 
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
@@ -51,19 +51,32 @@ Header.TextSize = 18
 local _SurvOn = false
 local _KillOn = false
 
--- Fungsi Deteksi Killer (Berdasarkan Tool/Backpack)
-local function GetIsKiller(p)
+-- Fungsi Deteksi Killer yang Tidak Tergantung Senjata
+local function IsKiller(p)
     local char = p.Character
     if not char then return false end
-    -- Cek Senjata (Biasanya Killer punya Tool di tangan atau Backpack)
-    local hasWeapon = char:FindFirstChildOfClass("Tool") or p.Backpack:FindFirstChildOfClass("Tool")
-    -- Cek Tag (Beberapa game District pakai Tag "Killer")
-    local tag = char:FindFirstChild("Killer") or p:FindFirstChild("Killer")
     
-    return (hasWeapon or tag)
+    -- 1. Cek Team (Biasanya Killer punya Tim Merah/Killer)
+    if p.Team and (p.Team.Name:lower():find("killer") or p.Team.Name:lower():find("murder")) then
+        return true
+    end
+    
+    -- 2. Cek Folder/Value Role (Sering ada di game District)
+    local role = p:FindFirstChild("Role") or char:FindFirstChild("Role")
+    if role and (role.Value == "Killer" or role.Value == 2) then
+        return true
+    end
+
+    -- 3. Cek Atribut khusus Killer (Killer biasanya punya Health lebih banyak)
+    local hum = char:FindFirstChild("Humanoid")
+    if hum and hum.MaxHealth > 100 then -- Biasanya Killer darahnya 200+
+        return true
+    end
+
+    return false
 end
 
--- Tombol ESP Survivor (HIJAU)
+-- Tombol ESP Survivor
 local SurvBtn = Instance.new("TextButton", MainFrame)
 SurvBtn.Size = UDim2.new(0.85, 0, 0, 35)
 SurvBtn.Position = UDim2.new(0.075, 0, 0, 60)
@@ -73,7 +86,7 @@ SurvBtn.TextColor3 = Color3.new(1, 1, 1)
 SurvBtn.Font = Enum.Font.SourceSansBold
 Instance.new("UICorner", SurvBtn)
 
--- Tombol ESP Killer (MERAH)
+-- Tombol ESP Killer
 local KillBtn = Instance.new("TextButton", MainFrame)
 KillBtn.Size = UDim2.new(0.85, 0, 0, 35)
 KillBtn.Position = UDim2.new(0.075, 0, 0, 105)
@@ -83,7 +96,7 @@ KillBtn.TextColor3 = Color3.new(1, 1, 1)
 KillBtn.Font = Enum.Font.SourceSansBold
 Instance.new("UICorner", KillBtn)
 
--- Render Loop (Prioritas Pemisahan)
+-- Render Loop (Pemisahan Logika)
 RunService.RenderStepped:Connect(function()
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= Players.LocalPlayer and p.Character then
@@ -94,14 +107,12 @@ RunService.RenderStepped:Connect(function()
                 highlight.OutlineColor = Color3.new(1, 1, 1)
             end
 
-            -- LOGIKA PEMISAHAN TOTAL
-            if GetIsKiller(p) then
-                -- KILLER: Warna Merah & Hanya aktif lewat Tombol Killer
-                highlight.FillColor = Color3.fromRGB(255, 0, 0)
+            -- LOGIKA PEMISAHAN BERDASARKAN ROLE
+            if IsKiller(p) then
+                highlight.FillColor = Color3.fromRGB(255, 0, 0) -- MERAH
                 highlight.Enabled = _KillOn
             else
-                -- SURVIVOR: Warna Hijau & Hanya aktif lewat Tombol Survivor
-                highlight.FillColor = Color3.fromRGB(0, 255, 0)
+                highlight.FillColor = Color3.fromRGB(0, 255, 0) -- HIJAU
                 highlight.Enabled = _SurvOn
             end
         end
