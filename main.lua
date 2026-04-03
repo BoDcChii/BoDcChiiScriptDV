@@ -1,4 +1,4 @@
--- [[ BoDcChii VD Helper v2.7 - Ultimate Fix 😈 ]] --
+-- [[ BoDcChii VD Helper v2.8 - Ghost Engine 😈 ]] --
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "BoDcChii_Main"
@@ -63,16 +63,10 @@ local EspPage = CreatePage("ESP", false)
 local function CreateToggleButton(parent, text, offColor, callback)
     local IsActive = false
     local Btn = Instance.new("TextButton")
-    Btn.Parent = parent
-    Btn.Size = UDim2.new(1, -5, 0, 35)
-    Btn.BackgroundColor3 = offColor
-    Btn.Text = text .. ": OFF"
-    Btn.TextColor3 = Color3.new(1, 1, 1)
-    Btn.Font = Enum.Font.SourceSansBold
+    Btn.Parent = parent; Btn.Size = UDim2.new(1, -5, 0, 35); Btn.BackgroundColor3 = offColor
+    Btn.Text = text .. ": OFF"; Btn.TextColor3 = Color3.new(1, 1, 1); Btn.Font = Enum.Font.SourceSansBold
     local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 6)
-    btnCorner.Parent = Btn
-    
+    btnCorner.CornerRadius = UDim.new(0, 6); btnCorner.Parent = Btn
     Btn.MouseButton1Click:Connect(function()
         IsActive = not IsActive
         Btn.BackgroundColor3 = IsActive and Color3.fromRGB(0, 200, 100) or offColor
@@ -82,25 +76,25 @@ local function CreateToggleButton(parent, text, offColor, callback)
     return Btn
 end
 
--- --- CORE FUNCTIONS ---
+-- --- CORE ENGINE (THE GHOST) ---
 
--- 1. FUNGSI AUTO PERFECT (AGRESIF)
+-- 1. AUTO PERFECT ENGINE (Ultra Fast Scan)
 local function AutoSkillCheck(state)
     _G.AutoSkillActive = state
     task.spawn(function()
         while _G.AutoSkillActive do
-            task.wait() -- Scan sangat cepat
-            local lp = game.Players.LocalPlayer
-            local pGui = lp:FindFirstChild("PlayerGui")
+            task.wait()
+            local pGui = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
             if pGui then
-                -- Mencari objek SkillCheck di seluruh UI
                 for _, v in pairs(pGui:GetDescendants()) do
-                    if v:IsA("GuiObject") and v.Visible and (v.Name:find("Skill") or v.Name:find("Check") or v.Name:find("Success") or v.Name:find("Perfect")) then
-                        -- Simulasikan tekan Spasi
-                        game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+                    -- Memindai objek yang muncul saat SkillCheck (biasanya berupa baris/jarum)
+                    if v:IsA("GuiObject") and v.Visible and (v.Name:lower():find("skill") or v.Name:lower():find("perfect") or v.Name:lower():find("check")) then
+                        -- Metode Input Alternatif (Keydown/Keyup)
+                        local vim = game:GetService("VirtualInputManager")
+                        vim:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
                         task.wait(0.01)
-                        game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.Space, false, game)
-                        task.wait(0.2) -- Delay cegah spam berlebih
+                        vim:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+                        task.wait(0.15)
                     end
                 end
             end
@@ -108,41 +102,42 @@ local function AutoSkillCheck(state)
     end)
 end
 
--- 2. FUNGSI PLAYER ESP (FIXED LOGIC)
-local function PlayerESP(state, targetIsKiller, color)
+-- 2. PLAYER ESP ENGINE (Workspace Wide Scan)
+local function PlayerESP(state, mode, color)
+    -- mode: 1 = Killer, 2 = Survivor
     if state then
         _G.PlayerTracker = game:GetService("RunService").Heartbeat:Connect(function()
-            for _, p in pairs(game.Players:GetPlayers()) do
-                if p ~= game.Players.LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                    -- Deteksi Tim
-                    local isKiller = false
-                    if p.TeamColor == game.Teams.Killer.TeamColor or p.Name:lower():find("killer") or p.Character:FindFirstChild("Knife") then
-                        isKiller = true
-                    end
+            for _, v in pairs(workspace:GetChildren()) do
+                -- Mencari Model Karakter Manusia
+                if v:IsA("Model") and v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") then
+                    local player = game.Players:GetPlayerFromCharacter(v)
+                    if v ~= game.Players.LocalPlayer.Character then
+                        
+                        -- Logika Deteksi Killer (Cek Senjata atau Nama Spesifik)
+                        local isKiller = false
+                        if v:FindFirstChild("Knife") or v:FindFirstChild("Weapon") or (player and player.Team and player.Team.Name:lower():find("killer")) then
+                            isKiller = true
+                        end
 
-                    -- Logika Filter
-                    if (targetIsKiller and isKiller) or (not targetIsKiller and not isKiller) then
-                        local hi = p.Character:FindFirstChild("BD_Highlight") or Instance.new("Highlight")
-                        hi.Name = "BD_Highlight"
-                        hi.Parent = p.Character
-                        hi.FillColor = color
-                        hi.OutlineColor = Color3.new(1, 1, 1)
-                        hi.FillTransparency = 0.4
-                    else
-                        if p.Character:FindFirstChild("BD_Highlight") then p.Character.BD_Highlight:Destroy() end
+                        if (mode == 1 and isKiller) or (mode == 2 and not isKiller) then
+                            local hi = v:FindFirstChild("BD_ESP") or Instance.new("Highlight")
+                            hi.Name = "BD_ESP"; hi.Parent = v; hi.FillColor = color; hi.FillTransparency = 0.4
+                        else
+                            if v:FindFirstChild("BD_ESP") then v.BD_ESP:Destroy() end
+                        end
                     end
                 end
             end
         end)
     else
         if _G.PlayerTracker then _G.PlayerTracker:Disconnect() end
-        for _, p in pairs(game.Players:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("BD_Highlight") then p.Character.BD_Highlight:Destroy() end
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v.Name == "BD_ESP" then v:Destroy() end
         end
     end
 end
 
--- 3. FUNGSI OBJECT ESP
+-- 3. OBJECT ESP ENGINE
 local function ObjectESP(state, key, color)
     if state then
         for _, v in pairs(workspace:GetDescendants()) do
@@ -153,18 +148,20 @@ local function ObjectESP(state, key, color)
         end
     else
         for _, v in pairs(workspace:GetDescendants()) do
-            if v:FindFirstChild("BD_ObjESP") then v.BD_ObjESP:Destroy() end
+            if v.Name == "BD_ObjESP" then v:Destroy() end
         end
     end
 end
 
--- --- TOMBOL ---
+-- --- TAB SUR ---
 CreateToggleButton(SurPage, "Perfect Gen", Color3.fromRGB(200, 50, 50), function(s) AutoSkillCheck(s) end)
 CreateToggleButton(SurPage, "Perfect Heal", Color3.fromRGB(200, 50, 50), function(s) AutoSkillCheck(s) end)
-CreateToggleButton(SurPage, "ESP Killer", Color3.fromRGB(200, 50, 50), function(s) PlayerESP(s, true, Color3.new(1, 0, 0)) end)
+CreateToggleButton(SurPage, "ESP Killer", Color3.fromRGB(200, 50, 50), function(s) PlayerESP(s, 1, Color3.new(1, 0, 0)) end)
 
-CreateToggleButton(KlrPage, "ESP Survival", Color3.fromRGB(200, 50, 50), function(s) PlayerESP(s, false, Color3.new(0, 1, 0)) end)
+-- --- TAB KLR ---
+CreateToggleButton(KlrPage, "ESP Survival", Color3.fromRGB(200, 50, 50), function(s) PlayerESP(s, 2, Color3.new(0, 1, 0)) end)
 
+-- --- TAB ESP ---
 CreateToggleButton(EspPage, "Full Bright", Color3.fromRGB(200, 50, 50), function(s)
     game:GetService("Lighting").Brightness = s and 2 or 1
     game:GetService("Lighting").GlobalShadows = not s
@@ -173,7 +170,7 @@ CreateToggleButton(EspPage, "ESP Gen", Color3.fromRGB(200, 50, 50), function(s) 
 CreateToggleButton(EspPage, "ESP Pallet", Color3.fromRGB(200, 50, 50), function(s) ObjectESP(s, "Pallet", Color3.new(1, 1, 0)) end)
 CreateToggleButton(EspPage, "ESP Gate", Color3.fromRGB(200, 50, 50), function(s) ObjectESP(s, "Gate", Color3.new(1, 1, 0)) end)
 
--- --- NAVIGASI ---
+-- --- NAV ---
 local function CreateTabBtn(pos, text, page)
     local TabBtn = Instance.new("TextButton")
     TabBtn.Parent = Sidebar; TabBtn.Position = pos; TabBtn.Size = UDim2.new(1, 0, 0, 45)
