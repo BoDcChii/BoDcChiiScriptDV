@@ -1,4 +1,4 @@
--- [[ BoDcChii Project - v4.5: Logic Rewrite Fix 🎸 ]] --
+-- [[ BoDcChii Project - v4.6: Visual Detection Final 🎸 ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
@@ -38,69 +38,45 @@ local Line = Instance.new("Frame", MainFrame)
 Line.Size = UDim2.new(0.9, 0, 0, 2); Line.Position = UDim2.new(0.05, 0, 0, 40)
 Line.BackgroundColor3 = Color3.fromRGB(255, 105, 180); Line.BorderSizePixel = 0
 
--- --- 3. REWRITE ESP SYSTEM (SESUAI PANDUAN BARU) ---
+-- --- 3. LOGIKA VISUAL DETECTION (SESUAI PANDUANMU) ---
 local genActive = false
-
-local function CreateESP(target)
-    if not target:FindFirstChild("BochiESP_Gen") then
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "BochiESP_Gen"
-        highlight.FillColor = Color3.fromRGB(0, 255, 255)
-        highlight.OutlineColor = Color3.new(1,1,1)
-        highlight.FillTransparency = 0.3
-        highlight.AlwaysOnTop = true
-        highlight.Parent = target
-    end
-end
-
-local function IsGenerator(model)
-    -- Deteksi berdasarkan isi (bukan nama)
-    local partCount = 0
-    for _, v in pairs(model:GetDescendants()) do
-        if v:IsA("BasePart") then
-            partCount += 1
-        end
-    end
-    
-    -- Minimal kompleks (bukan object kecil random)
-    if partCount < 5 then return false end
-
-    -- Cek ada komponen khas (Tombol E atau Click)
-    if model:FindFirstChildWhichIsA("ProximityPrompt") 
-    or model:FindFirstChildWhichIsA("ClickDetector") then
-        return true
-    end
-
-    -- Cek nama anak (lebih dalam)
-    for _, v in pairs(model:GetDescendants()) do
-        local n = v.Name:lower()
-        if n:find("repair") or n:find("fix") or n:find("progress") then
-            return true
-        end
-    end
-
-    return false
-end
 
 task.spawn(function()
     while true do
         if genActive then
             for _, obj in pairs(workspace:GetDescendants()) do
-                if obj:IsA("Model") then
-                    if IsGenerator(obj) then
-                        CreateESP(obj)
+                -- Hanya deteksi Part fisik
+                if obj:IsA("BasePart") then
+                    -- Filter objek yang besarnya masuk akal sebagai generator (> 5)
+                    if obj.Size.Magnitude > 5 then
+                        -- Pastikan ini bukan bagian dari tubuh Player (Humanoid)
+                        if not obj.Parent:FindFirstChild("Humanoid") then
+                            -- Pastikan objeknya terlihat (bukan part invisible)
+                            if obj.Transparency < 0.5 then
+                                -- Pasang ESP jika belum ada
+                                if not obj:FindFirstChild("BochiESP_Gen") then
+                                    local h = Instance.new("Highlight")
+                                    h.Name = "BochiESP_Gen"
+                                    h.FillColor = Color3.fromRGB(0, 255, 255) -- Cyan
+                                    h.OutlineColor = Color3.new(1, 1, 1)
+                                    h.FillTransparency = 0.4
+                                    h.AlwaysOnTop = true
+                                    h.Parent = obj
+                                end
+                            end
+                        end
                     end
                 end
             end
         else
-            -- hapus semua ESP
+            -- Hapus semua ESP saat OFF
             for _, v in pairs(workspace:GetDescendants()) do
                 if v.Name == "BochiESP_Gen" then
                     v:Destroy()
                 end
             end
         end
-        task.wait(1)
+        task.wait(1) -- Scan cepat tiap detik
     end
 end)
 
