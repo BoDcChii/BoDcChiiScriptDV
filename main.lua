@@ -1,4 +1,4 @@
--- [[ BoDcChii VD Helper v2.3 - Player Tracker Update 😈 ]] --
+-- [[ BoDcChii VD Helper v2.4 - Killer Color Fix 😈 ]] --
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "BoDcChii_Main"
@@ -82,34 +82,49 @@ local function CreateToggleButton(parent, text, offColor, callback)
     return Btn
 end
 
--- Fungsi Highlight Player (ESP)
+-- Fungsi Cek Killer
+local function CheckIfKiller(player)
+    if player.Team then
+        local teamName = player.Team.Name:lower()
+        if teamName:find("killer") or teamName:find("slasher") or teamName:find("beast") then
+            return true
+        end
+    end
+    -- Cek tambahan jika dia memegang senjata tajam
+    if player.Character and (player.Character:FindFirstChild("Knife") or player.Character:FindFirstChild("Weapon")) then
+        return true
+    end
+    return false
+end
+
+-- Fungsi ESP Player
 local function PlayerESP(state, targetType, color)
-    -- TargetType: 1 = Killer, 2 = Survivor
+    -- targetType: 1 = Mau liat Killer (Merah), 2 = Mau liat Survivor (Hijau)
     if state then
-        _G.ESP_Loop = game:GetService("RunService").RenderStepped:Connect(function()
+        _G.PlayerLoop = game:GetService("RunService").RenderStepped:Connect(function()
             for _, p in pairs(game.Players:GetPlayers()) do
                 if p ~= game.Players.LocalPlayer and p.Character then
-                    local isKiller = false
-                    -- Logika Deteksi Killer (Berdasarkan Team atau Tool Senjata)
-                    if p.Team and (p.Team.Name:find("Killer") or p.Team.Name:find("Slasher")) or p.Character:FindFirstChild("Knife") then
-                        isKiller = true
-                    end
+                    local isKiller = CheckIfKiller(p)
                     
+                    -- Filter: Jika kita minta Killer (1) dan dia emang Killer, ATAU minta Survi (2) dan dia bukan Killer
                     if (targetType == 1 and isKiller) or (targetType == 2 and not isKiller) then
-                        if not p.Character:FindFirstChild("BD_PlayerESP") then
-                            local hi = Instance.new("Highlight")
-                            hi.Name = "BD_PlayerESP"
-                            hi.Parent = p.Character
-                            hi.FillColor = color
-                            hi.OutlineColor = Color3.new(1,1,1)
-                            hi.FillTransparency = 0.4
+                        local hi = p.Character:FindFirstChild("BD_PlayerESP") or Instance.new("Highlight")
+                        hi.Name = "BD_PlayerESP"
+                        hi.Parent = p.Character
+                        hi.FillColor = color
+                        hi.OutlineColor = Color3.new(1,1,1)
+                        hi.FillTransparency = 0.4
+                    else
+                        -- Hapus ESP jika dia pindah tim atau bukan target yang dicari
+                        if p.Character:FindFirstChild("BD_PlayerESP") then
+                            p.Character.BD_PlayerESP:Destroy()
                         end
                     end
                 end
             end
         end)
     else
-        if _G.ESP_Loop then _G.ESP_Loop:Disconnect() end
+        if _G.PlayerLoop then _G.PlayerLoop:Disconnect() end
         for _, p in pairs(game.Players:GetPlayers()) do
             if p.Character and p.Character:FindFirstChild("BD_PlayerESP") then
                 p.Character.BD_PlayerESP:Destroy()
@@ -118,7 +133,7 @@ local function PlayerESP(state, targetType, color)
     end
 end
 
--- Fungsi Highlight Objek (Gen/Pallet)
+-- Fungsi ESP Objek
 local function ObjectESP(state, nameKey, color)
     if state then
         for _, v in pairs(workspace:GetDescendants()) do
@@ -143,12 +158,12 @@ end
 -- SUR PAGE
 CreateToggleButton(SurPage, "Perfect Gen", Color3.fromRGB(200, 50, 50), function(s) end)
 CreateToggleButton(SurPage, "ESP Killer", Color3.fromRGB(200, 50, 50), function(s)
-    PlayerESP(s, 1, Color3.new(1, 0, 0)) -- MERAH
+    PlayerESP(s, 1, Color3.fromRGB(255, 0, 0)) -- MERAH
 end)
 
 -- KLR PAGE
 CreateToggleButton(KlrPage, "ESP Survival", Color3.fromRGB(200, 50, 50), function(s)
-    PlayerESP(s, 2, Color3.new(0, 1, 0)) -- HIJAU
+    PlayerESP(s, 2, Color3.fromRGB(0, 255, 0)) -- HIJAU
 end)
 
 -- ESP PAGE
