@@ -1,4 +1,4 @@
--- [[ BoDcChii VD Helper v2.2 - Toggle & ESP Fix 😈 ]] --
+-- [[ BoDcChii VD Helper v2.3 - Player Tracker Update 😈 ]] --
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "BoDcChii_Main"
@@ -48,15 +48,10 @@ PageContainer.BackgroundTransparency = 1
 
 local function CreatePage(name, visible)
     local Page = Instance.new("ScrollingFrame")
-    Page.Name = name
-    Page.Parent = PageContainer
-    Page.Size = UDim2.new(1, 0, 1, 0)
-    Page.BackgroundTransparency = 1
-    Page.ScrollBarThickness = 2
-    Page.Visible = visible
+    Page.Name = name; Page.Parent = PageContainer; Page.Size = UDim2.new(1, 0, 1, 0)
+    Page.BackgroundTransparency = 1; Page.ScrollBarThickness = 2; Page.Visible = visible
     local Layout = Instance.new("UIListLayout")
-    Layout.Parent = Page
-    Layout.Padding = UDim.new(0, 5)
+    Layout.Parent = Page; Layout.Padding = UDim.new(0, 5)
     return Page
 end
 
@@ -64,109 +59,118 @@ local SurPage = CreatePage("SUR", true)
 local KlrPage = CreatePage("KLR", false)
 local EspPage = CreatePage("ESP", false)
 
--- --- FUNGSI TOGGLE WARNA & ESP ---
-local function CreateToggleButton(parent, text, offColor, onColor, callback)
+-- --- FUNGSI TOGGLE & ESP ENGINE ---
+local function CreateToggleButton(parent, text, offColor, callback)
     local IsActive = false
     local Btn = Instance.new("TextButton")
     Btn.Parent = parent
     Btn.Size = UDim2.new(1, -5, 0, 35)
-    Btn.BackgroundColor3 = offColor -- Awalnya Merah/Warna Mati
+    Btn.BackgroundColor3 = offColor
     Btn.Text = text .. ": OFF"
     Btn.TextColor3 = Color3.new(1, 1, 1)
     Btn.Font = Enum.Font.SourceSansBold
-    
     local btnCorner = Instance.new("UICorner")
     btnCorner.CornerRadius = UDim.new(0, 6)
     btnCorner.Parent = Btn
     
     Btn.MouseButton1Click:Connect(function()
         IsActive = not IsActive
-        if IsActive then
-            Btn.BackgroundColor3 = Color3.fromRGB(0, 200, 100) -- Hijau (Aktif)
-            Btn.Text = text .. ": ON"
-        else
-            Btn.BackgroundColor3 = offColor -- Kembali ke warna awal
-            Btn.Text = text .. ": OFF"
-        end
+        Btn.BackgroundColor3 = IsActive and Color3.fromRGB(0, 200, 100) or offColor
+        Btn.Text = IsActive and text .. ": ON" or text .. ": OFF"
         callback(IsActive)
     end)
     return Btn
 end
 
--- Fungsi ESP Universal
-local function ManageESP(state, targetName, color)
+-- Fungsi Highlight Player (ESP)
+local function PlayerESP(state, targetType, color)
+    -- TargetType: 1 = Killer, 2 = Survivor
     if state then
-        for _, v in pairs(workspace:GetDescendants()) do
-            -- Mencoba mencari berdasarkan Nama atau Nama Ortu (biar makin akurat di VD)
-            if v.Name:find(targetName) or (v.Parent and v.Parent.Name:find(targetName)) then
-                if v:IsA("Model") or v:IsA("BasePart") then
-                    if not v:FindFirstChild("BD_Highlight") then
-                        local highlight = Instance.new("Highlight")
-                        highlight.Name = "BD_Highlight"
-                        highlight.Parent = v
-                        highlight.FillColor = color
-                        highlight.OutlineColor = Color3.new(1, 1, 1)
-                        highlight.FillTransparency = 0.4
+        _G.ESP_Loop = game:GetService("RunService").RenderStepped:Connect(function()
+            for _, p in pairs(game.Players:GetPlayers()) do
+                if p ~= game.Players.LocalPlayer and p.Character then
+                    local isKiller = false
+                    -- Logika Deteksi Killer (Berdasarkan Team atau Tool Senjata)
+                    if p.Team and (p.Team.Name:find("Killer") or p.Team.Name:find("Slasher")) or p.Character:FindFirstChild("Knife") then
+                        isKiller = true
+                    end
+                    
+                    if (targetType == 1 and isKiller) or (targetType == 2 and not isKiller) then
+                        if not p.Character:FindFirstChild("BD_PlayerESP") then
+                            local hi = Instance.new("Highlight")
+                            hi.Name = "BD_PlayerESP"
+                            hi.Parent = p.Character
+                            hi.FillColor = color
+                            hi.OutlineColor = Color3.new(1,1,1)
+                            hi.FillTransparency = 0.4
+                        end
                     end
                 end
             end
-        end
+        end)
     else
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v:FindFirstChild("BD_Highlight") then
-                v.BD_Highlight:Destroy()
+        if _G.ESP_Loop then _G.ESP_Loop:Disconnect() end
+        for _, p in pairs(game.Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("BD_PlayerESP") then
+                p.Character.BD_PlayerESP:Destroy()
             end
         end
     end
 end
 
--- --- ISI HALAMAN 1: SURVIVAL ---
-CreateToggleButton(SurPage, "Perfect Gen", Color3.fromRGB(200, 50, 50), nil, function(state)
-    -- Logika Auto Gen akan kita masukkan setelah ini
-end)
-
-CreateToggleButton(SurPage, "ESP Killer", Color3.fromRGB(200, 50, 50), nil, function(state)
-    -- Di VD Killer biasanya namanya "Killer" atau ada di folder "Players" dengan tim merah
-    ManageESP(state, "Killer", Color3.new(1, 0, 0)) -- MERAH
-end)
-
--- --- ISI HALAMAN 2: KILLER ---
-CreateToggleButton(KlrPage, "ESP Survival", Color3.fromRGB(200, 50, 50), nil, function(state)
-    ManageESP(state, "Survivor", Color3.new(0, 1, 0)) -- HIJAU
-end)
-
--- --- ISI HALAMAN 3: ESP (VISUAL) ---
-CreateToggleButton(EspPage, "Full Bright", Color3.fromRGB(200, 50, 50), nil, function(state)
+-- Fungsi Highlight Objek (Gen/Pallet)
+local function ObjectESP(state, nameKey, color)
     if state then
-        game:GetService("Lighting").Brightness = 2
-        game:GetService("Lighting").GlobalShadows = false
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v.Name:find(nameKey) or (v.Parent and v.Parent.Name:find(nameKey)) then
+                if not v:FindFirstChild("BD_ObjESP") then
+                    local hi = Instance.new("Highlight")
+                    hi.Name = "BD_ObjESP"
+                    hi.Parent = v
+                    hi.FillColor = color
+                    hi.FillTransparency = 0.5
+                end
+            end
+        end
     else
-        game:GetService("Lighting").Brightness = 1
-        game:GetService("Lighting").GlobalShadows = true
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:FindFirstChild("BD_ObjESP") then v.BD_ObjESP:Destroy() end
+        end
     end
+end
+
+-- --- TOMBOL-TOMBOL ---
+-- SUR PAGE
+CreateToggleButton(SurPage, "Perfect Gen", Color3.fromRGB(200, 50, 50), function(s) end)
+CreateToggleButton(SurPage, "ESP Killer", Color3.fromRGB(200, 50, 50), function(s)
+    PlayerESP(s, 1, Color3.new(1, 0, 0)) -- MERAH
 end)
 
-CreateToggleButton(EspPage, "ESP Generator", Color3.fromRGB(200, 50, 50), nil, function(state)
-    ManageESP(state, "Generator", Color3.new(1, 1, 0)) -- KUNING
+-- KLR PAGE
+CreateToggleButton(KlrPage, "ESP Survival", Color3.fromRGB(200, 50, 50), function(s)
+    PlayerESP(s, 2, Color3.new(0, 1, 0)) -- HIJAU
 end)
 
-CreateToggleButton(EspPage, "ESP Pallet", Color3.fromRGB(200, 50, 50), nil, function(state)
-    ManageESP(state, "Pallet", Color3.new(1, 1, 0)) -- KUNING
+-- ESP PAGE
+CreateToggleButton(EspPage, "Full Bright", Color3.fromRGB(200, 50, 50), function(s)
+    game:GetService("Lighting").Brightness = s and 2 or 1
+    game:GetService("Lighting").GlobalShadows = not s
+end)
+CreateToggleButton(EspPage, "ESP Gen", Color3.fromRGB(200, 50, 50), function(s)
+    ObjectESP(s, "Generator", Color3.new(1, 1, 0))
+end)
+CreateToggleButton(EspPage, "ESP Pallet", Color3.fromRGB(200, 50, 50), function(s)
+    ObjectESP(s, "Pallet", Color3.new(1, 1, 0))
 end)
 
--- --- NAVIGASI TAB ---
+-- --- NAVIGASI ---
 local function CreateTabBtn(pos, text, page)
     local TabBtn = Instance.new("TextButton")
-    TabBtn.Parent = Sidebar
-    TabBtn.Position = pos
-    TabBtn.Size = UDim2.new(1, 0, 0, 45)
-    TabBtn.Text = text
-    TabBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    TabBtn.TextColor3 = Color3.new(1, 1, 1)
-    TabBtn.Font = Enum.Font.SourceSansBold
+    TabBtn.Parent = Sidebar; TabBtn.Position = pos; TabBtn.Size = UDim2.new(1, 0, 0, 45)
+    TabBtn.Text = text; TabBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    TabBtn.TextColor3 = Color3.new(1, 1, 1); TabBtn.Font = Enum.Font.SourceSansBold
     TabBtn.MouseButton1Click:Connect(function()
-        SurPage.Visible = false; KlrPage.Visible = false; EspPage.Visible = false
-        page.Visible = true
+        SurPage.Visible = false; KlrPage.Visible = false; EspPage.Visible = false; page.Visible = true
     end)
 end
 CreateTabBtn(UDim2.new(0,0,0,5), "SUR", SurPage)
