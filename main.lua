@@ -1,7 +1,7 @@
--- [[ BoDcChii VD Helper v0.2 - Fixed & Locked 😈 ]] --
+-- [[ BoDcChii VD Helper v0.3 - Final Complete 😈 ]] --
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BoDcChii_v02"
+ScreenGui.Name = "BoDcChii_v03"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -10,14 +10,15 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 local function ExitScript()
     _G.KillerActive = false
     _G.SurviActive = false
-    _G.ObjScan = false
+    _G.GenActive = false
+    _G.PalletActive = false
     for _, v in pairs(workspace:GetDescendants()) do
-        if v.Name == "BD_ESP" then v:Destroy() end
+        if v.Name == "BD_ESP" or v.Name == "BD_OBJ" then v:Destroy() end
     end
     ScreenGui:Destroy()
 end
 
--- 1. FLOATING ICON (BD)
+-- 1. FLOATING ICON
 local OpenIcon = Instance.new("TextButton")
 OpenIcon.Parent = ScreenGui
 OpenIcon.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
@@ -36,7 +37,7 @@ local MainFrame = Instance.new("Frame")
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MainFrame.Position = UDim2.new(0.5, -110, 0.3, 0)
-MainFrame.Size = UDim2.new(0, 220, 0, 280) -- Ukuran pas
+MainFrame.Size = UDim2.new(0, 220, 0, 280)
 MainFrame.Visible = false
 MainFrame.ZIndex = 5
 local MainCorner = Instance.new("UICorner")
@@ -47,7 +48,7 @@ OpenIcon.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
--- 3. TOMBOL SILANG (X) - PAKSA PALING DEPAN
+-- 3. TOMBOL SILANG (X)
 local ExitBtn = Instance.new("TextButton")
 ExitBtn.Parent = MainFrame
 ExitBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
@@ -56,11 +57,10 @@ ExitBtn.Size = UDim2.new(0, 25, 0, 25)
 ExitBtn.Text = "X"
 ExitBtn.TextColor3 = Color3.new(1, 1, 1)
 ExitBtn.Font = Enum.Font.SourceSansBold
-ExitBtn.ZIndex = 10 -- Biar nggak ketutup
+ExitBtn.ZIndex = 10
 local ExitCorner = Instance.new("UICorner")
 ExitCorner.CornerRadius = UDim.new(1, 0)
 ExitCorner.Parent = ExitBtn
-
 ExitBtn.MouseButton1Click:Connect(ExitScript)
 
 -- 4. SIDEBAR & PAGES
@@ -88,13 +88,13 @@ local SurPage = CreatePage("SUR", true)
 local KlrPage = CreatePage("KLR", false)
 local EspPage = CreatePage("ESP", false)
 
--- 5. WATERMARK @BoDcChii & v0.1
+-- 5. WATERMARK
 local Footer = Instance.new("TextLabel")
 Footer.Parent = MainFrame
 Footer.Position = UDim2.new(0, 0, 1, -25)
 Footer.Size = UDim2.new(1, 0, 0, 20)
 Footer.BackgroundTransparency = 1
-Footer.Text = "@BoDcChii | v0.1"
+Footer.Text = "@BoDcChii | v0.3"
 Footer.TextColor3 = Color3.fromRGB(0, 170, 255)
 Footer.Font = Enum.Font.SourceSansBold
 Footer.TextSize = 13
@@ -109,7 +109,6 @@ local function CreateToggle(parent, text, callback)
     btn.Text = text .. ": OFF"; btn.TextColor3 = Color3.new(1, 1, 1)
     btn.Font = Enum.Font.SourceSansBold
     local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, 6); c.Parent = btn
-    
     btn.MouseButton1Click:Connect(function()
         active = not active
         btn.BackgroundColor3 = active and Color3.fromRGB(0, 200, 100) or Color3.fromRGB(50, 50, 50)
@@ -118,8 +117,8 @@ local function CreateToggle(parent, text, callback)
     end)
 end
 
--- --- CORE LOGIC (ANTI-WARNABERUBAH) ---
-local function RunESP(state, mode, color)
+-- --- PLAYER ESP LOGIC ---
+local function RunPlayerESP(state, mode, color)
     _G[mode.."_Active"] = state
     if state then
         task.spawn(function()
@@ -127,23 +126,11 @@ local function RunESP(state, mode, color)
                 task.wait(0.5)
                 for _, p in pairs(game.Players:GetPlayers()) do
                     if p ~= game.Players.LocalPlayer and p.Character then
-                        -- Deteksi Killer Super Teliti
-                        local isK = (p.Team and p.Team.Name:lower():find("killer")) or 
-                                    p.Character:FindFirstChild("Knife") or 
-                                    p.Character:FindFirstChild("Weapon") or
-                                    p.Name:lower():find("killer")
-
+                        local isK = (p.Team and p.Team.Name:lower():find("killer")) or p.Character:FindFirstChild("Knife") or p.Character:FindFirstChild("Weapon")
                         if (mode == "Killer" and isK) or (mode == "Survivor" and not isK) then
                             local hi = p.Character:FindFirstChild("BD_ESP") or Instance.new("Highlight")
                             hi.Name = "BD_ESP"; hi.Parent = p.Character; hi.FillColor = color
                             hi.FillTransparency = 0.4; hi.OutlineColor = Color3.new(1,1,1)
-                        else
-                            -- Jika dia bukan target, hapus ESP-nya (Cegah warna berubah)
-                            if p.Character:FindFirstChild("BD_ESP") then 
-                                -- Hanya hapus jika loop lain tidak sedang mewarnainya
-                                local other = (mode == "Killer") and "Survivor_Active" or "Killer_Active"
-                                if not _G[other] then p.Character.BD_ESP:Destroy() end
-                            end
                         end
                     end
                 end
@@ -151,25 +138,49 @@ local function RunESP(state, mode, color)
         end)
     else
         for _, p in pairs(game.Players:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("BD_ESP") then p.Character.BD_ESP:Destroy() end
+            if p.Character and p.Character:FindFirstChild("BD_ESP") then p.Character.BD_Killer_ESP:Destroy() end -- Bersihkan manual jika perlu
+        end
+    end
+end
+
+-- --- OBJECT ESP LOGIC (GEN & PALLET) ---
+local function RunObjectESP(state, key, color)
+    _G[key.."Active"] = state
+    if state then
+        task.spawn(function()
+            while _G[key.."Active"] do
+                task.wait(1.5) -- Scan objek lebih santai biar gak lag
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v.Name:find(key) or (v.Parent and v.Parent.Name:find(key)) then
+                        if not v:FindFirstChild("BD_OBJ") then
+                            local hi = Instance.new("Highlight")
+                            hi.Name = "BD_OBJ"; hi.Parent = v; hi.FillColor = color
+                            hi.FillTransparency = 0.5; hi.OutlineColor = Color3.new(1,1,1)
+                        end
+                    end
+                end
+            end
+        end)
+    else
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v.Name == "BD_OBJ" then v:Destroy() end
         end
     end
 end
 
 -- --- SETUP MENU ---
-CreateToggle(SurPage, "ESP Killer", function(s) RunESP(s, "Killer", Color3.new(1,0,0)) end)
-CreateToggle(KlrPage, "ESP Survival", function(s) RunESP(s, "Survivor", Color3.new(0,1,0)) end)
-CreateToggle(EspPage, "Bright", function(s) game:GetService("Lighting").Brightness = s and 2 or 1 end)
+CreateToggle(SurPage, "ESP Killer", function(s) RunPlayerESP(s, "Killer", Color3.new(1,0,0)) end)
+CreateToggle(KlrPage, "ESP Survival", function(s) RunPlayerESP(s, "Survivor", Color3.new(0,1,0)) end)
+CreateToggle(EspPage, "Full Bright", function(s) game:GetService("Lighting").Brightness = s and 2 or 1 end)
+CreateToggle(EspPage, "ESP Generator", function(s) RunObjectESP(s, "Generator", Color3.new(1,1,0)) end)
+CreateToggle(EspPage, "ESP Pallet", function(s) RunObjectESP(s, "Pallet", Color3.new(1,1,0)) end)
 
 -- --- NAVIGASI ---
 local function Tab(pos, txt, p)
     local b = Instance.new("TextButton")
     b.Parent = Sidebar; b.Position = pos; b.Size = UDim2.new(1, 0, 0, 45)
-    b.Text = txt; b.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    b.TextColor3 = Color3.new(1, 1, 1); b.Font = Enum.Font.SourceSansBold
-    b.MouseButton1Click:Connect(function()
-        SurPage.Visible = false; KlrPage.Visible = false; EspPage.Visible = false; p.Visible = true
-    end)
+    b.Text = txt; b.BackgroundColor3 = Color3.fromRGB(45, 45, 45); b.TextColor3 = Color3.new(1, 1, 1); b.Font = Enum.Font.SourceSansBold
+    b.MouseButton1Click:Connect(function() SurPage.Visible = false; KlrPage.Visible = false; EspPage.Visible = false; p.Visible = true end)
 end
 Tab(UDim2.new(0,0,0,5), "SUR", SurPage)
 Tab(UDim2.new(0,0,0,55), "KLR", KlrPage)
