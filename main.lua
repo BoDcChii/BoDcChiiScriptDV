@@ -1,5 +1,5 @@
 -- [[ BoDcChii Project - v4.1: Minimalist BD 🎸 ]] --
--- Update: Added ESP Survivor (Green Highlight)
+-- Update: Added Separate ESP (Survivor: Green | Killer: Red)
 
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
@@ -34,7 +34,7 @@ IconStroke.Thickness = 2
 
 -- --- 2. HALAMAN FITUR ---
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 240, 0, 200) -- Ukuran ditambah sedikit untuk tombol
+MainFrame.Size = UDim2.new(0, 240, 0, 220) -- Ukuran disesuaikan untuk 2 tombol
 MainFrame.Position = UDim2.new(0.5, -120, 0.4, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.Visible = false
@@ -53,69 +53,79 @@ Header.BackgroundTransparency = 1
 Header.Font = Enum.Font.SourceSansBold
 Header.TextSize = 18
 
-local Line = Instance.new("Frame", MainFrame)
-Line.Size = UDim2.new(0.9, 0, 0, 2)
-Line.Position = UDim2.new(0.05, 0, 0, 40)
-Line.BackgroundColor3 = Color3.fromRGB(255, 105, 180)
-Line.BorderSizePixel = 0
+-- --- 3. LOGIKA ESP (SURVIVOR & KILLER) ---
+local SurvivorEnabled = false
+local KillerEnabled = false
 
--- --- 3. FITUR ESP SURVIVOR ---
-local EspEnabled = false
-
-local EspBtn = Instance.new("TextButton", MainFrame)
-EspBtn.Size = UDim2.new(0.8, 0, 0, 35)
-EspBtn.Position = UDim2.new(0.1, 0, 0, 60)
-EspBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Default Merah (Mati)
-EspBtn.Text = "ESP Survivor: OFF"
-EspBtn.TextColor3 = Color3.new(1, 1, 1)
-EspBtn.Font = Enum.Font.SourceSansBold
-EspBtn.TextSize = 16
-Instance.new("UICorner", EspBtn).CornerRadius = UDim.new(0, 6)
-
--- Fungsi untuk membuat Highlight
-local function ApplyEsp(character)
-    if not character:FindFirstChild("BDSurvivorESP") then
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "BDSurvivorESP"
-        highlight.Parent = character
-        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Hijau
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-        highlight.FillTransparency = 0.5
-        highlight.Enabled = EspEnabled
+-- Fungsi cek apakah pemain adalah Killer (Berdasarkan Tool/Senjata)
+local function IsKiller(player)
+    -- Biasanya Killer punya tool "Knife" atau "Weapon" di Backpack atau Character
+    if player.Backpack:FindFirstChild("Knife") or player.Backpack:FindFirstChild("Weapon") or 
+       (player.Character and (player.Character:FindFirstChild("Knife") or player.Character:FindFirstChild("Weapon"))) then
+        return true
     end
+    return false
 end
+
+local function CreateESP(btn, text, colorOn)
+    btn.Size = UDim2.new(0.8, 0, 0, 35)
+    btn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 14
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+end
+
+-- Tombol ESP Survivor
+local SurvBtn = Instance.new("TextButton", MainFrame)
+SurvBtn.Name = "SurvBtn"
+SurvBtn.Text = "ESP Survivor: OFF"
+SurvBtn.Position = UDim2.new(0.1, 0, 0, 60)
+CreateESP(SurvBtn)
+
+-- Tombol ESP Killer
+local KillBtn = Instance.new("TextButton", MainFrame)
+KillBtn.Name = "KillBtn"
+KillBtn.Text = "ESP Killer: OFF"
+KillBtn.Position = UDim2.new(0.1, 0, 0, 105)
+CreateESP(KillBtn)
 
 -- Update Loop
 RunService.RenderStepped:Connect(function()
-    if EspEnabled then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= Players.LocalPlayer and p.Character then
-                local hl = p.Character:FindFirstChild("BDSurvivorESP")
-                if not hl then
-                    ApplyEsp(p.Character)
-                else
-                    hl.Enabled = true
-                end
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= Players.LocalPlayer and p.Character then
+            local hl = p.Character:FindFirstChild("BDEsp")
+            
+            if not hl then
+                hl = Instance.new("Highlight")
+                hl.Name = "BDEsp"
+                hl.Parent = p.Character
+                hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                hl.FillTransparency = 0.5
             end
-        end
-    else
-        for _, p in pairs(Players:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("BDSurvivorESP") then
-                p.Character.BDSurvivorESP.Enabled = false
+
+            -- Logika Pemisahan Warna
+            if IsKiller(p) then
+                hl.FillColor = Color3.fromRGB(255, 0, 0) -- Merah untuk Killer
+                hl.Enabled = KillerEnabled
+            else
+                hl.FillColor = Color3.fromRGB(0, 255, 0) -- Hijau untuk Survivor
+                hl.Enabled = SurvivorEnabled
             end
         end
     end
 end)
 
-EspBtn.MouseButton1Click:Connect(function()
-    EspEnabled = not EspEnabled
-    if EspEnabled then
-        EspBtn.Text = "ESP Survivor: ON"
-        EspBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50) -- Hijau (Aktif)
-    else
-        EspBtn.Text = "ESP Survivor: OFF"
-        EspBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Merah (Mati)
-    end
+SurvBtn.MouseButton1Click:Connect(function()
+    SurvivorEnabled = not SurvivorEnabled
+    SurvBtn.Text = SurvivorEnabled and "ESP Survivor: ON" or "ESP Survivor: OFF"
+    SurvBtn.BackgroundColor3 = SurvivorEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+end)
+
+KillBtn.MouseButton1Click:Connect(function()
+    KillerEnabled = not KillerEnabled
+    KillBtn.Text = KillerEnabled and "ESP Killer: ON" or "ESP Killer: OFF"
+    KillBtn.BackgroundColor3 = KillerEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
 end)
 
 -- --- 4. LOGIKA BUKA/TUTUP ---
