@@ -1,9 +1,9 @@
--- [[ BoDcChii Project - v5.0: Glowing Text Aura 🎸 ]] --
+-- [[ BoDcChii Project - v5.1: Force Tracker 🎸 ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
 
--- Hapus UI lama agar bersih
+-- Bersihkan UI lama
 if CoreGui:FindFirstChild("BoDcChii_Minimalist") then
     CoreGui.BoDcChii_Minimalist:Destroy()
 end
@@ -23,8 +23,7 @@ Instance.new("UIStroke", OpenButton).Color = Color3.fromRGB(255, 105, 180)
 
 -- --- 2. HALAMAN FITUR ---
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 240, 0, 180)
-MainFrame.Position = UDim2.new(0.5, -120, 0.4, 0)
+MainFrame.Size = UDim2.new(0, 240, 0, 180); MainFrame.Position = UDim2.new(0.5, -120, 0.4, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15); MainFrame.Visible = false
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(255, 105, 180)
@@ -33,66 +32,72 @@ local Header = Instance.new("TextLabel", MainFrame)
 Header.Size = UDim2.new(1, 0, 0, 40); Header.Text = "BoDcChii Project"; Header.TextColor3 = Color3.new(1, 1, 1)
 Header.BackgroundTransparency = 1; Header.Font = Enum.Font.SourceSansBold; Header.TextSize = 18
 
-local Line = Instance.new("Frame", MainFrame)
-Line.Size = UDim2.new(0.9, 0, 0, 2); Line.Position = UDim2.new(0.05, 0, 0, 40)
-Line.BackgroundColor3 = Color3.fromRGB(255, 105, 180); Line.BorderSizePixel = 0
-
--- --- 3. LOGIKA TEKS AURA (PENGGANTI HIGHLIGHT) ---
+-- --- 3. LOGIKA PELAKAK PAKSA (FORCE ESP) ---
 local genActive = false
 
-local function CreateTextAura(part)
-    if not part:FindFirstChild("BochiAura_Text") then
+local function CreateForceESP(target)
+    if not target:FindFirstChild("Bochi_Tracker") then
         local bill = Instance.new("BillboardGui")
-        bill.Name = "BochiAura_Text"
-        bill.Size = UDim2.new(0, 120, 0, 50)
-        bill.AlwaysOnTop = true -- Menembus tembok
-        bill.Adornee = part
-        bill.Parent = part
-        bill.MaxDistance = 10000 -- Biar kelihatan dari ujung map
+        bill.Name = "Bochi_Tracker"
+        bill.Size = UDim2.new(0, 100, 0, 100)
+        bill.AlwaysOnTop = true
+        bill.Adornee = target
+        bill.Parent = target
 
-        local text = Instance.new("TextLabel", bill)
-        text.Size = UDim2.new(1, 0, 1, 0)
-        text.BackgroundTransparency = 1
-        text.Text = "⚡ GENERATOR ⚡" -- Biar lebih jelas
-        text.TextColor3 = Color3.fromRGB(0, 255, 255) -- Cyan pekat
-        text.TextStrokeTransparency = 0 -- Outline hitam tebal
-        text.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-        text.Font = Enum.Font.SourceSansBold
-        text.TextScaled = true
-        
-        -- Efek berkedip biar kayak Aura asli
-        task.spawn(function()
-            while bill and bill.Parent do
-                text.TextTransparency = 0.2
-                task.wait(0.5)
-                text.TextTransparency = 0.5
-                task.wait(0.5)
-            end
-        end)
+        -- Box Visual (Kotak Biru)
+        local box = Instance.new("Frame", bill)
+        box.Size = UDim2.new(0.8, 0, 0.8, 0)
+        box.Position = UDim2.new(0.1, 0, 0.1, 0)
+        box.BackgroundTransparency = 0.7
+        box.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
+        local stroke = Instance.new("UIStroke", box)
+        stroke.Color = Color3.fromRGB(0, 255, 255)
+        stroke.Thickness = 2
+
+        -- Label Teks
+        local label = Instance.new("TextLabel", bill)
+        label.Size = UDim2.new(1, 0, 0.3, 0)
+        label.Position = UDim2.new(0, 0, -0.4, 0)
+        label.BackgroundTransparency = 1
+        label.Text = "GENERATOR"
+        label.TextColor3 = Color3.fromRGB(0, 255, 255)
+        label.Font = Enum.Font.SourceSansBold
+        label.TextScaled = true
+        label.TextStrokeTransparency = 0
     end
 end
 
 task.spawn(function()
     while true do
         if genActive then
+            -- Cari di seluruh Workspace tanpa ampun
             for _, v in pairs(workspace:GetDescendants()) do
-                if v:IsA("Model") then
-                    local prompt = v:FindFirstChildWhichIsA("ProximityPrompt", true)
-                    if prompt and (prompt.ObjectText:find("Gen") or prompt.ActionText:find("Repair")) then
-                        local mainPart = v:FindFirstChild("MainPart") or v:FindFirstChildWhichIsA("BasePart", true)
-                        if mainPart then
-                            CreateTextAura(mainPart)
-                        end
+                local isTarget = false
+                
+                -- Cek berdasarkan nama (Generator)
+                if v.Name:lower():find("generator") then
+                    isTarget = true
+                end
+                
+                -- Cek berdasarkan isi interaksi (Repair/Fix)
+                if not isTarget and v:IsA("ProximityPrompt") then
+                    if v.ActionText:find("Repair") or v.ObjectText:find("Gen") then
+                        isTarget = true
+                        v = v.Parent -- Pasang ESP di Parent tombolnya
                     end
+                end
+
+                if isTarget and v:IsA("BasePart") or v:IsA("Model") then
+                    local part = v:IsA("Model") and (v:FindFirstChild("MainPart") or v:FindFirstChildWhichIsA("BasePart", true)) or v
+                    if part then CreateForceESP(part) end
                 end
             end
         else
-            -- Hapus semua teks jika OFF
             for _, v in pairs(workspace:GetDescendants()) do
-                if v.Name == "BochiAura_Text" then v:Destroy() end
+                if v.Name == "Bochi_Tracker" then v:Destroy() end
             end
         end
-        task.wait(2)
+        task.wait(1.5) -- Scan lebih sering
     end
 end)
 
@@ -100,16 +105,16 @@ end)
 local GenBtn = Instance.new("TextButton", MainFrame)
 GenBtn.Size = UDim2.new(0.9, 0, 0, 45); GenBtn.Position = UDim2.new(0.05, 0, 0, 60)
 GenBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-GenBtn.Text = "Text Aura: OFF"; GenBtn.TextColor3 = Color3.new(1, 1, 1)
+GenBtn.Text = "ESP Tracker: OFF"; GenBtn.TextColor3 = Color3.new(1, 1, 1)
 GenBtn.Font = Enum.Font.SourceSansBold; Instance.new("UICorner", GenBtn)
 
 GenBtn.MouseButton1Click:Connect(function()
     genActive = not genActive
     GenBtn.BackgroundColor3 = genActive and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(180, 50, 50)
-    GenBtn.Text = genActive and "Text Aura: ON" or "Text Aura: OFF"
+    GenBtn.Text = genActive and "ESP Tracker: ON" or "ESP Tracker: OFF"
 end)
 
--- --- 5. BUKA/TUTUP & DRAG ---
+-- --- 5. DRAG & EXIT (SINGKAT) ---
 OpenButton.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 local Exit = Instance.new("TextButton", MainFrame)
 Exit.Size = UDim2.new(0, 25, 0, 25); Exit.Position = UDim2.new(1, -30, 0, 7); Exit.Text = "X"
