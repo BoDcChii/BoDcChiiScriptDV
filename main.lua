@@ -1,9 +1,9 @@
--- [[ BoDcChii Project - v4.6: Visual Detection Final 🎸 ]] --
+-- [[ BoDcChii Project - v4.1: Minimalist BD (v4.7 Billboard Fix) 🎸 ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
 
--- Bersihkan UI lama
+-- Bersihkan versi lama
 if CoreGui:FindFirstChild("BoDcChii_Minimalist") then
     CoreGui.BoDcChii_Minimalist:Destroy()
 end
@@ -38,45 +38,52 @@ local Line = Instance.new("Frame", MainFrame)
 Line.Size = UDim2.new(0.9, 0, 0, 2); Line.Position = UDim2.new(0.05, 0, 0, 40)
 Line.BackgroundColor3 = Color3.fromRGB(255, 105, 180); Line.BorderSizePixel = 0
 
--- --- 3. LOGIKA VISUAL DETECTION (SESUAI PANDUANMU) ---
+-- --- 3. LOGIKA BILLBOARD ESP (SESUAI PANDUAN BARU) ---
 local genActive = false
+
+local function CreateESP(part)
+    if not part:FindFirstChild("BochiESP_Gen") then
+        local bill = Instance.new("BillboardGui")
+        bill.Name = "BochiESP_Gen"
+        bill.Size = UDim2.new(0, 100, 0, 40)
+        bill.AlwaysOnTop = true
+        bill.Adornee = part
+        bill.Parent = part
+        bill.MaxDistance = 5000 -- Biar kelihatan dari jauh banget
+
+        local text = Instance.new("TextLabel", bill)
+        text.Size = UDim2.new(1, 0, 1, 0)
+        text.BackgroundTransparency = 1
+        text.Text = "GEN"
+        text.TextColor3 = Color3.fromRGB(0, 255, 255) -- Cyan
+        text.TextStrokeTransparency = 0 -- List hitam biar jelas
+        text.Font = Enum.Font.SourceSansBold
+        text.TextScaled = true
+    end
+end
 
 task.spawn(function()
     while true do
         if genActive then
+            -- Gunakan strategi Visual Detection karena paling akurat
             for _, obj in pairs(workspace:GetDescendants()) do
-                -- Hanya deteksi Part fisik
                 if obj:IsA("BasePart") then
-                    -- Filter objek yang besarnya masuk akal sebagai generator (> 5)
                     if obj.Size.Magnitude > 5 then
-                        -- Pastikan ini bukan bagian dari tubuh Player (Humanoid)
                         if not obj.Parent:FindFirstChild("Humanoid") then
-                            -- Pastikan objeknya terlihat (bukan part invisible)
                             if obj.Transparency < 0.5 then
-                                -- Pasang ESP jika belum ada
-                                if not obj:FindFirstChild("BochiESP_Gen") then
-                                    local h = Instance.new("Highlight")
-                                    h.Name = "BochiESP_Gen"
-                                    h.FillColor = Color3.fromRGB(0, 255, 255) -- Cyan
-                                    h.OutlineColor = Color3.new(1, 1, 1)
-                                    h.FillTransparency = 0.4
-                                    h.AlwaysOnTop = true
-                                    h.Parent = obj
-                                end
+                                CreateESP(obj)
                             end
                         end
                     end
                 end
             end
         else
-            -- Hapus semua ESP saat OFF
+            -- Hapus Billboard saat OFF
             for _, v in pairs(workspace:GetDescendants()) do
-                if v.Name == "BochiESP_Gen" then
-                    v:Destroy()
-                end
+                if v.Name == "BochiESP_Gen" then v:Destroy() end
             end
         end
-        task.wait(1) -- Scan cepat tiap detik
+        task.wait(1)
     end
 end)
 
