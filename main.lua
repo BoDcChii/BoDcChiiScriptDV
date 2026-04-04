@@ -1,5 +1,5 @@
 -- [[ BoDcChii Project - v4.1: Minimalist BD 🎸 ]] --
--- Update: Full Draggable UI (Icon & Menu) + ESP Fix
+-- Update: Fixed Draggable System (Optimized for Mobile)
 
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
@@ -15,14 +15,16 @@ local ScreenGui = Instance.new("ScreenGui", CoreGui)
 ScreenGui.Name = "BoDcChii_Minimalist"
 ScreenGui.ResetOnSpawn = false
 
--- --- FUNGSI DRAG (Agar bisa digeser di Mobile/PC) ---
-local function MakeDraggable(gui)
+-- --- FUNGSI DRAG MOBILE-FRIENDLY ---
+local function EnableDrag(gui)
     local dragging, dragInput, dragStart, startPos
+    
     gui.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = gui.Position
+            
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -30,11 +32,13 @@ local function MakeDraggable(gui)
             end)
         end
     end)
+    
     gui.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
     end)
+    
     UIS.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - dragStart
@@ -54,11 +58,9 @@ OpenButton.TextSize = 24
 OpenButton.Font = Enum.Font.SourceSansBold
 OpenButton.ZIndex = 500
 Instance.new("UICorner", OpenButton).CornerRadius = UDim.new(0, 12)
-local IconStroke = Instance.new("UIStroke", OpenButton)
-IconStroke.Color = Color3.fromRGB(255, 105, 180)
-IconStroke.Thickness = 2
+Instance.new("UIStroke", OpenButton).Color = Color3.fromRGB(255, 105, 180)
 
-MakeDraggable(OpenButton) -- Aktifkan geser untuk Ikon
+EnableDrag(OpenButton)
 
 -- --- 2. HALAMAN MENU ---
 local MainFrame = Instance.new("Frame", ScreenGui)
@@ -66,13 +68,15 @@ MainFrame.Size = UDim2.new(0, 240, 0, 200)
 MainFrame.Position = UDim2.new(0.5, -120, 0.4, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.Visible = false
-MainFrame.Active = true
+MainFrame.Active = true -- Penting agar InputBegan terbaca
+MainFrame.Selectable = true
+
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 local Stroke = Instance.new("UIStroke", MainFrame)
 Stroke.Color = Color3.fromRGB(255, 105, 180)
 Stroke.Thickness = 2
 
-MakeDraggable(MainFrame) -- Aktifkan geser untuk Menu Utama
+EnableDrag(MainFrame) -- Sekarang MainFrame HARUS bisa digeser
 
 local Header = Instance.new("TextLabel", MainFrame)
 Header.Size = UDim2.new(1, 0, 0, 40)
@@ -145,8 +149,9 @@ KillBtn.MouseButton1Click:Connect(function()
     KillBtn.BackgroundColor3 = _KillOn and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
 end)
 
--- --- 4. SISTEM BUKA/TUTUP ---
+-- --- 4. BUKA/TUTUP & EXIT ---
 OpenButton.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
+
 local Exit = Instance.new("TextButton", MainFrame)
 Exit.Size = UDim2.new(0, 25, 0, 25)
 Exit.Position = UDim2.new(1, -30, 0, 7)
