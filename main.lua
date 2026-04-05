@@ -1,5 +1,5 @@
--- [[ BoDcChii Project - v4.9: THE LOCKED MASTER 🎸 ]] --
--- Update: Fixed ESP Generator (Deep Search) + Locked Features
+-- [[ BoDcChii Project - v4.9.4: THE LOCKED MASTER 🎸 ]] --
+-- Update: Smart Potato Mode + Re-run Instruction Description
 
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
@@ -11,7 +11,7 @@ local Lighting = game:GetService("Lighting")
 if CoreGui:FindFirstChild("BoDcChii_Minimalist") then CoreGui.BoDcChii_Minimalist:Destroy() end
 if CoreGui:FindFirstChild("BoDcChii_Welcome") then CoreGui.BoDcChii_Welcome:Destroy() end
 
--- --- 1. WELCOME NOTIFICATION (2 DETIK) ---
+-- --- 1. WELCOME NOTIFICATION ---
 local function ShowWelcome()
     local WelcomeGui = Instance.new("ScreenGui", CoreGui)
     WelcomeGui.Name = "BoDcChii_Welcome"
@@ -22,12 +22,10 @@ local function ShowWelcome()
     Instance.new("UICorner", WelcomeFrame).CornerRadius = UDim.new(0, 10)
     local Stroke = Instance.new("UIStroke", WelcomeFrame)
     Stroke.Color = Color3.fromRGB(255, 105, 180); Stroke.Thickness = 2
-    
     local WelcomeLabel = Instance.new("TextLabel", WelcomeFrame)
     WelcomeLabel.Size = UDim2.new(1, 0, 1, 0); WelcomeLabel.BackgroundTransparency = 1
     WelcomeLabel.Text = "Welcome To BoDcChii Project"; WelcomeLabel.TextColor3 = Color3.new(1, 1, 1)
     WelcomeLabel.TextSize = 14; WelcomeLabel.Font = Enum.Font.SourceSansBold
-    
     task.delay(2, function() WelcomeGui:Destroy() end)
 end
 pcall(ShowWelcome)
@@ -35,7 +33,6 @@ pcall(ShowWelcome)
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
 ScreenGui.Name = "BoDcChii_Minimalist"; ScreenGui.ResetOnSpawn = false
 
--- --- FUNGSI DRAG ---
 local function EnableDrag(gui)
     local dragging, dragStart, startPos
     gui.InputBegan:Connect(function(input)
@@ -84,7 +81,7 @@ UIList.SortOrder = Enum.SortOrder.LayoutOrder; UIList.Padding = UDim.new(0, 5); 
 local function CreateBtn(parent, text)
     local btn = Instance.new("TextButton", parent); btn.Size = UDim2.new(0.95, 0, 0, 35)
     btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25); btn.Text = text .. ": OFF"; btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.Font = Enum.Font.SourceSansBold; btn.TextSize = 11; Instance.new("UICorner", btn)
+    btn.Font = Enum.Font.SourceSansBold; btn.TextSize = 10; Instance.new("UICorner", btn)
     local s = Instance.new("UIStroke", btn); s.Color = Color3.fromRGB(200, 50, 50)
     return btn
 end
@@ -103,7 +100,7 @@ local function CreateFrame(size)
     return f
 end
 
--- --- 4. CATEGORIES & FEATURES ---
+-- --- 4. CATEGORIES ---
 local Cat1 = CreateCat("PLAYER ESP")
 local Frame1 = CreateFrame(80)
 local _SurvOn, _KillOn = false, false
@@ -117,10 +114,17 @@ local GenBtn = CreateBtn(Frame2, "ESP GENERATOR")
 local SkillBtn = CreateBtn(Frame2, "NO SKILL CHECK GENERATOR")
 
 local Cat3 = CreateCat("SMOOTH MAPS")
-local Frame3 = CreateFrame(80)
-local _FullBright, _NoFog = false, false
+local Frame3 = CreateFrame(150) -- Ukuran ditambah untuk deskripsi
+local _FullBright, _NoFog, _PotatoMode = false, false, false
 local BrightBtn = CreateBtn(Frame3, "FULL BRIGHT")
 local FogBtn = CreateBtn(Frame3, "NO FOG / MIST")
+local PotatoBtn = CreateBtn(Frame3, "POTATO MODE (ANTI LAG)")
+
+-- Tambahkan Deskripsi Khusus Potato Mode
+local PotatoDesc = Instance.new("TextLabel", Frame3)
+PotatoDesc.Size = UDim2.new(0.9, 0, 0, 30); PotatoDesc.BackgroundTransparency = 1
+PotatoDesc.Text = "*Nyalakan ulang/Reload fitur ini setiap pindah map"; PotatoDesc.TextColor3 = Color3.fromRGB(200, 200, 200)
+PotatoDesc.TextSize = 8; PotatoDesc.Font = Enum.Font.SourceSansItalic; PotatoDesc.TextWrapped = true
 
 local function Refresh() ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 15) end
 Cat1.MouseButton1Click:Connect(function() Frame1.Visible = not Frame1.Visible Cat1.Text = Frame1.Visible and "[ PLAYER ESP ]  -" or "[ PLAYER ESP ]  +" Refresh() end)
@@ -140,10 +144,57 @@ SkillBtn.MouseButton1Click:Connect(function() _NoSkillGen = not _NoSkillGen Togg
 BrightBtn.MouseButton1Click:Connect(function() _FullBright = not _FullBright Toggle(BrightBtn, _FullBright, "FULL BRIGHT") end)
 FogBtn.MouseButton1Click:Connect(function() _NoFog = not _NoFog Toggle(FogBtn, _NoFog, "NO FOG / MIST") end)
 
+-- SMART POTATO MODE (PROTECTION + RE-RUN LOGIC)
+PotatoBtn.MouseButton1Click:Connect(function() 
+    _PotatoMode = not _PotatoMode 
+    Toggle(PotatoBtn, _PotatoMode, "POTATO MODE (ANTI LAG)")
+    
+    if _PotatoMode then
+        for _, v in pairs(game.Workspace:GetDescendants()) do
+            local isPlayer = v:FindFirstAncestorOfClass("Model") and Players:GetPlayerFromCharacter(v:FindFirstAncestorOfClass("Model"))
+            local isImportant = v.Name:find("Gen") or v.Name:find("Generator") or v.Name:find("Pallet") or v:FindFirstAncestor("Generator") or v:FindFirstAncestor("Pallet")
+
+            if not isPlayer and not isImportant then
+                if v:IsA("BasePart") then
+                    v.Material = Enum.Material.SmoothPlastic
+                    if v:IsA("MeshPart") then v.TextureID = "" end
+                elseif v:IsA("Texture") or v:IsA("Decal") then
+                    v.Transparency = 1
+                elseif v:IsA("SurfaceAppearance") or v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                    if v:IsA("SurfaceAppearance") then v:Destroy() else v.Enabled = false end
+                elseif v:IsA("SpecialMesh") then
+                    v.TextureId = ""
+                end
+            end
+        end
+    end
+end)
+
+-- Generator ESP Polling (3 Detik)
+task.spawn(function()
+    while true do
+        if _GenOn then
+            for _, v in pairs(game.Workspace:GetDescendants()) do
+                if (v.Name:find("Gen") or v.Name:find("Generator")) and (v:IsA("Model") or v:IsA("BasePart")) then
+                    if not v:FindFirstChild("GenEsp") then
+                        local h = Instance.new("Highlight", v)
+                        h.Name = "GenEsp"; h.FillColor = Color3.fromRGB(255, 255, 0); h.FillTransparency = 0.5
+                    end
+                    v.GenEsp.Enabled = true
+                end
+            end
+        else
+            for _, v in pairs(game.Workspace:GetDescendants()) do
+                if v:FindFirstChild("GenEsp") then v.GenEsp.Enabled = false end
+            end
+        end
+        task.wait(3)
+    end
+end)
+
 RunService.Heartbeat:Connect(function()
     if _FullBright then Lighting.Ambient = Color3.new(1, 1, 1); Lighting.ClockTime = 12 end
     if _NoFog then Lighting.FogEnd = 999999 end
-    
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= Players.LocalPlayer and p.Character then
             local hl = p.Character:FindFirstChild("BDEsp") or Instance.new("Highlight", p.Character)
@@ -151,29 +202,6 @@ RunService.Heartbeat:Connect(function()
             local isK = (p.Team and p.Team.Name:lower():find("kill")) or (p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.MaxHealth > 100)
             hl.Enabled = (isK and _KillOn) or (not isK and _SurvOn)
             hl.FillColor = isK and Color3.new(1, 0, 0) or Color3.new(0, 1, 0)
-        end
-    end
-
-    -- --- FIX KHUSUS ESP GENERATOR ---
-    if _GenOn then
-        for _, v in pairs(game.Workspace:GetDescendants()) do
-            if (v.Name:find("Gen") or v.Name:find("Generator")) and (v:IsA("Model") or v:IsA("BasePart")) then
-                local h = v:FindFirstChild("GenEsp")
-                if not h then
-                    h = Instance.new("Highlight")
-                    h.Name = "GenEsp"
-                    h.Parent = v
-                    h.FillColor = Color3.fromRGB(255, 255, 0)
-                    h.OutlineColor = Color3.new(1, 1, 1)
-                    h.FillTransparency = 0.5
-                end
-                h.Enabled = true
-            end
-        end
-    else
-        for _, v in pairs(game.Workspace:GetDescendants()) do
-            local h = v:FindFirstChild("GenEsp")
-            if h then h.Enabled = false end
         end
     end
 end)
