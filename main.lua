@@ -1,4 +1,4 @@
--- [[ BoDcChii Project - v0.3: ABOUT UPDATE LOG 🎸 ]] --
+-- [[ BoDcChii Project - v0.3: POTATO MODE ULTIMATE SYNC 🎸 ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
@@ -81,7 +81,6 @@ ContentScroll.Size = UDim2.new(1, -135, 1, -50); ContentScroll.Position = UDim2.
 ContentScroll.BackgroundTransparency = 1; ContentScroll.BorderSizePixel = 0
 SetupScroll(ContentScroll)
 
--- --- GARIS PEMISAH ---
 local LineH = Instance.new("Frame", MainFrame)
 LineH.Size = UDim2.new(0.95, 0, 0, 2); LineH.Position = UDim2.new(0.025, 0, 0, 36); LineH.BackgroundColor3 = Color3.fromRGB(255, 105, 180); LineH.BorderSizePixel = 0
 local LineV = Instance.new("Frame", MainFrame)
@@ -109,7 +108,7 @@ end
 
 local P0, P1, P2, P3 = CreatePage(), CreatePage(), CreatePage(), CreatePage()
 
--- --- ISI ABOUT PAGE (WITH UPDATE LOG) ---
+-- --- ISI ABOUT PAGE ---
 local AboutInfo = Instance.new("TextLabel", P0)
 AboutInfo.Size = UDim2.new(1, 0, 0, 160); AboutInfo.BackgroundTransparency = 1
 AboutInfo.Text = "Creator: BoDcChii\nScript Tester: Xiaoo\nVersi: v0.3\n\nUpdate:\n- Optimalisasi ESP Generator\n- UI Baru dan Lebih Rapi\n- Fitur Potato Mode"
@@ -153,15 +152,25 @@ Btn4.MouseButton1Click:Connect(function() _NoSkillGen = not _NoSkillGen Toggle(B
 Btn5.MouseButton1Click:Connect(function() _FullBright = not _FullBright Toggle(Btn5, _FullBright, "FULL BRIGHT") end)
 Btn6.MouseButton1Click:Connect(function() _NoFog = not _NoFog Toggle(Btn6, _NoFog, "NO FOG") end)
 
+-- FITUR POTATO MODE DARI v5.1.6 (ULTIMATE)
 Btn7.MouseButton1Click:Connect(function() 
     _PotatoMode = not _PotatoMode 
     Toggle(Btn7, _PotatoMode, "POTATO MODE")
     if _PotatoMode then
         for _, v in pairs(game.Workspace:GetDescendants()) do
             local isPlayer = v:FindFirstAncestorOfClass("Model") and Players:GetPlayerFromCharacter(v:FindFirstAncestorOfClass("Model"))
-            if not isPlayer then
-                if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic if v:IsA("MeshPart") then v.TextureID = "" end
-                elseif v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1 end
+            local isImportant = v.Name:find("Gen") or v.Name:find("Generator") or v.Name:find("Pallet") or v:FindFirstAncestor("Generator") or v:FindFirstAncestor("Pallet")
+            if not isPlayer and not isImportant then
+                if v:IsA("BasePart") then 
+                    v.Material = Enum.Material.SmoothPlastic 
+                    if v:IsA("MeshPart") then v.TextureID = "" end
+                elseif v:IsA("Texture") or v:IsA("Decal") then 
+                    v.Transparency = 1
+                elseif v:IsA("SurfaceAppearance") or v:IsA("ParticleEmitter") or v:IsA("Trail") then 
+                    if v:IsA("SurfaceAppearance") then v:Destroy() else v.Enabled = false end
+                elseif v:IsA("SpecialMesh") then 
+                    v.TextureId = "" 
+                end
             end
         end
     end
@@ -172,7 +181,7 @@ task.spawn(function()
         if _GenOn then
             for _, v in pairs(game.Workspace:GetDescendants()) do
                 if (v.Name:find("Gen") or v.Name:find("Generator")) and (v:IsA("Model") or v:IsA("BasePart")) then
-                    if not v:FindFirstChild("GenEsp") then local h = Instance.new("Highlight", v); h.Name = "GenEsp"; h.FillColor = Color3.fromRGB(255, 255, 0) end
+                    if not v:FindFirstChild("GenEsp") then local h = Instance.new("Highlight", v); h.Name = "GenEsp"; h.FillColor = Color3.fromRGB(255, 255, 0); h.FillTransparency = 0.5 end
                     v.GenEsp.Enabled = true
                 end
             end
@@ -201,7 +210,7 @@ if mt then
         local method = getnamecallmethod()
         if _NoSkillGen and (method == "FireServer" or method == "InvokeServer") then
             local n = tostring(self):lower()
-            if n:find("fail") or n:find("skillcheck") then return nil end
+            if n:find("fail") or n:find("skillcheck") or n:find("explode") then return nil end
         end
         return old(self, ...)
     end); setreadonly(mt, true)
