@@ -1,4 +1,4 @@
--- [[ BoDcChii Project - v0.4.2: FIXED EXECUTION 🎸 ]] --
+-- [[ BoDcChii Project - v0.4.2: POTATO MODE FIXED 🎸 ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
@@ -201,14 +201,23 @@ task.spawn(function()
     end
 end)
 
--- POTATO MODE
+-- --- POTATO MODE ULTIMATE SYNC ---
 Btn7.MouseButton1Click:Connect(function() 
     _PotatoMode = not _PotatoMode 
     Toggle(Btn7, _PotatoMode, "POTATO MODE")
     if _PotatoMode then
         for _, v in pairs(game.Workspace:GetDescendants()) do
-            if v:IsA("BasePart") and not v:FindFirstAncestorOfClass("Model") then v.Material = Enum.Material.SmoothPlastic 
-            elseif v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1 end
+            local isPlayer = v:FindFirstAncestorOfClass("Model") and Players:GetPlayerFromCharacter(v:FindFirstAncestorOfClass("Model"))
+            local isImportant = v.Name:find("Gen") or v.Name:find("Generator") or v.Name:find("Pallet") or v:FindFirstAncestor("Generator") or v:FindFirstAncestor("Pallet")
+            if not isPlayer and not isImportant then
+                if v:IsA("BasePart") then 
+                    v.Material = Enum.Material.SmoothPlastic 
+                    if v:IsA("MeshPart") then v.TextureID = "" end
+                elseif v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1
+                elseif v:IsA("SurfaceAppearance") or v:IsA("ParticleEmitter") or v:IsA("Trail") then 
+                    if v:IsA("SurfaceAppearance") then v:Destroy() else v.Enabled = false end
+                elseif v:IsA("SpecialMesh") then v.TextureId = "" end
+            end
         end
     end
 end)
@@ -241,12 +250,14 @@ if mt then
 end
 
 -- --- 6. BUTTON & TOGGLE ---
-local OpenButton = Instance.new("TextButton", ScreenGui)
-OpenButton.Size = UDim2.new(0, 50, 0, 50); OpenButton.Position = UDim2.new(0, 20, 0.5, -25)
-OpenButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30); OpenButton.Text = "BD"; OpenButton.TextColor3 = Color3.fromRGB(255, 105, 180); OpenButton.TextSize = 24; OpenButton.Font = Enum.Font.SourceSansBold; OpenButton.ZIndex = 500
-Instance.new("UICorner", OpenButton).CornerRadius = UDim.new(0, 12)
-local BtnStroke = Instance.new("UIStroke", OpenButton); BtnStroke.Color = Color3.fromRGB(255, 105, 180); BtnStroke.Thickness = 2
-EnableDrag(OpenButton)
+local OpenButton = Instance.new("ScreenGui", CoreGui)
+OpenButton.Name = "BoDcChii_Toggle"
+local MainBtn = Instance.new("TextButton", OpenButton)
+MainBtn.Size = UDim2.new(0, 50, 0, 50); MainBtn.Position = UDim2.new(0, 20, 0.5, -25)
+MainBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); MainBtn.Text = "BD"; MainBtn.TextColor3 = Color3.fromRGB(255, 105, 180); MainBtn.TextSize = 24; MainBtn.Font = Enum.Font.SourceSansBold
+Instance.new("UICorner", MainBtn).CornerRadius = UDim.new(0, 12)
+local BtnStroke = Instance.new("UIStroke", MainBtn); BtnStroke.Color = Color3.fromRGB(255, 105, 180); BtnStroke.Thickness = 2
+EnableDrag(MainBtn)
 
 task.spawn(function()
     while task.wait() do
@@ -255,7 +266,7 @@ task.spawn(function()
     end
 end)
 
-OpenButton.MouseButton1Click:Connect(function()
+MainBtn.MouseButton1Click:Connect(function()
     if MainFrame.Visible then
         MainFrame:TweenSize(UDim2.new(0, 0, 0, 0), "Out", "Quad", 0.3, true, function() MainFrame.Visible = false end)
     else
