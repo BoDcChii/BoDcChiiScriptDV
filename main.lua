@@ -1,4 +1,4 @@
--- [[ BoDcChii Project - v0.4.1: BOCCHI POLISH EDITION (LOGIC SYNC) 🎸 ]] --
+-- [[ BoDcChii Project - v0.4.2: FIXED EXECUTION 🎸 ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
@@ -6,12 +6,13 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
+local VIM = game:GetService("VirtualInputManager")
 
 -- --- 0. ANTI-REDUNDANT ---
 if CoreGui:FindFirstChild("BoDcChii_Minimalist") then CoreGui.BoDcChii_Minimalist:Destroy() end
 if CoreGui:FindFirstChild("BoDcChii_Welcome") then CoreGui.BoDcChii_Welcome:Destroy() end
 
--- --- 1. WELCOME NOTIFICATION (UI PERTAMA) ---
+-- --- 1. WELCOME NOTIFICATION ---
 local function ShowWelcome()
     local WelcomeGui = Instance.new("ScreenGui", CoreGui)
     WelcomeGui.Name = "BoDcChii_Welcome"
@@ -49,7 +50,7 @@ local function EnableDrag(gui)
     UIS.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
 end
 
--- --- 2. MAIN UI STRUCTURE (UI PERTAMA) ---
+-- --- 2. MAIN UI STRUCTURE ---
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 380, 0, 220); MainFrame.Position = UDim2.new(0.5, -190, 0.4, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15); MainFrame.Visible = false; MainFrame.Active = true
@@ -59,7 +60,6 @@ local MainStroke = Instance.new("UIStroke", MainFrame)
 MainStroke.Color = Color3.fromRGB(255, 105, 180); MainStroke.Thickness = 2
 EnableDrag(MainFrame)
 
--- RAINBOW STROKE
 task.spawn(function()
     while task.wait() do
         local hue = tick() % 5 / 5
@@ -75,9 +75,8 @@ Header.BackgroundTransparency = 1; Header.Font = Enum.Font.SourceSansBold; Heade
 local function SetupScroll(scroll)
     scroll.Active = true; scroll.ScrollBarThickness = 4
     scroll.ScrollBarImageColor3 = Color3.fromRGB(255, 105, 180)
-    scroll.CanvasSize = UDim2.new(0, 0, 1.5, 0) 
+    scroll.CanvasSize = UDim2.new(0, 0, 1.8, 0) 
     scroll.ScrollingDirection = Enum.ScrollingDirection.Y
-    scroll.ElasticBehavior = Enum.ElasticBehavior.Always
 end
 
 local SidebarScroll = Instance.new("ScrollingFrame", MainFrame)
@@ -114,11 +113,10 @@ end
 
 local P0, P1, P2, P3 = CreatePage(), CreatePage(), CreatePage(), CreatePage()
 
--- ISI ABOUT (TIDAK DIUBAH)
 local AboutInfo = Instance.new("TextLabel", P0)
-AboutInfo.Size = UDim2.new(1, 0, 0, 160); AboutInfo.BackgroundTransparency = 1
-AboutInfo.Text = "Creator: BoDcChii\nScript Tester: Xiaoo\nVersi: v0.4 (Aesthetic)\n\nUpdate:\n- Rainbow UI Stroke\n- Fade Open/Close Animation\n- Fitur Potato Mode Tetap Aktif"
-AboutInfo.TextColor3 = Color3.new(1, 1, 1); AboutInfo.TextSize = 12; AboutInfo.Font = Enum.Font.SourceSansBold; AboutInfo.TextXAlignment = Enum.TextXAlignment.Left
+AboutInfo.Size = UDim2.new(1, 0, 0, 200); AboutInfo.BackgroundTransparency = 1
+AboutInfo.Text = "Creator: BoDcChii\nScript Tester: Xiaoo\nVersi: v0.4.2 (BETA)\n\nUpdate Fitur:\n- Auto Parry Beta (50s Cooldown)\n- Fitur Auto Parry dalam tahap\n  pengembangan, kemungkinan\n  masih terdapat bug.\n- Fix Analog Lock (Mobile)"
+AboutInfo.TextColor3 = Color3.new(1, 1, 1); AboutInfo.TextSize = 11; AboutInfo.Font = Enum.Font.SourceSansBold; AboutInfo.TextXAlignment = Enum.TextXAlignment.Left
 
 local function Show(p, b)
     P0.Visible = false; P1.Visible = false; P2.Visible = false; P3.Visible = false
@@ -140,10 +138,13 @@ local function CreateBtn(parent, text)
     return btn
 end
 
--- --- 5. LOGIKA FITUR (DARI KODINGAN KEDUA/v0.3) ---
-local _SurvOn, _KillOn, _GenOn, _NoSkillGen, _FullBright, _NoFog, _PotatoMode = false, false, false, false, false, false, false
+-- --- 5. LOGIKA FITUR ---
+local _SurvOn, _KillOn, _GenOn, _NoSkillGen, _FullBright, _NoFog, _PotatoMode, _AutoParry = false, false, false, false, false, false, false, false
+local isWaitingParry = false
+local threatTimer = 0
+
 local Btn1 = CreateBtn(P1, "ESP SURVIVAL"); local Btn2 = CreateBtn(P1, "ESP KILLER")
-local Btn3 = CreateBtn(P2, "ESP GENERATOR"); local Btn4 = CreateBtn(P2, "NO SKILL CHECK")
+local BtnAP = CreateBtn(P2, "AUTO PARRY (BETA)"); local Btn3 = CreateBtn(P2, "ESP GENERATOR"); local Btn4 = CreateBtn(P2, "NO SKILL CHECK")
 local Btn5 = CreateBtn(P3, "FULL BRIGHT"); local Btn6 = CreateBtn(P3, "NO FOG"); local Btn7 = CreateBtn(P3, "POTATO MODE")
 
 local function Toggle(btn, state, txt)
@@ -158,44 +159,61 @@ Btn4.MouseButton1Click:Connect(function() _NoSkillGen = not _NoSkillGen Toggle(B
 Btn5.MouseButton1Click:Connect(function() _FullBright = not _FullBright Toggle(Btn5, _FullBright, "FULL BRIGHT") end)
 Btn6.MouseButton1Click:Connect(function() _NoFog = not _NoFog Toggle(Btn6, _NoFog, "NO FOG") end)
 
--- LOGIKA POTATO MODE ULTIMATE SYNC
+-- AUTO PARRY LOGIC
+BtnAP.MouseButton1Click:Connect(function() _AutoParry = not _AutoParry Toggle(BtnAP, _AutoParry, "AUTO PARRY (BETA)") end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.05)
+        if _AutoParry and not isWaitingParry then
+            local lp = Players.LocalPlayer
+            local root = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+            local inDanger = false
+            if root then
+                pcall(function()
+                    for _, enemy in pairs(Players:GetPlayers()) do
+                        if enemy ~= lp and enemy.Character and enemy.Character:FindFirstChild("HumanoidRootPart") then
+                            local isK = (enemy.Team and enemy.Team.Name:lower():find("kill")) or (enemy.Character:FindFirstChild("Humanoid") and enemy.Character.Humanoid.MaxHealth > 100)
+                            if isK then
+                                local d = (root.Position - enemy.Character.HumanoidRootPart.Position).Magnitude
+                                if d < 9.5 then
+                                    inDanger = true
+                                    threatTimer = threatTimer + 0.05
+                                    if threatTimer >= 0.15 then
+                                        isWaitingParry = true
+                                        BtnAP.Text = "COOLDOWN (50s)"
+                                        local View = workspace.CurrentCamera.ViewportSize
+                                        VIM:SendMouseButtonEvent(View.X * 0.85, View.Y * 0.70, 0, true, game, 0)
+                                        task.wait(0.01)
+                                        VIM:SendMouseButtonEvent(View.X * 0.85, View.Y * 0.70, 0, false, game, 0)
+                                        task.delay(50, function() isWaitingParry = false Toggle(BtnAP, _AutoParry, "AUTO PARRY (BETA)") end)
+                                        threatTimer = 0
+                                        break
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+            if not inDanger then threatTimer = 0 end
+        end
+    end
+end)
+
+-- POTATO MODE
 Btn7.MouseButton1Click:Connect(function() 
     _PotatoMode = not _PotatoMode 
     Toggle(Btn7, _PotatoMode, "POTATO MODE")
     if _PotatoMode then
         for _, v in pairs(game.Workspace:GetDescendants()) do
-            local isPlayer = v:FindFirstAncestorOfClass("Model") and Players:GetPlayerFromCharacter(v:FindFirstAncestorOfClass("Model"))
-            local isImportant = v.Name:find("Gen") or v.Name:find("Generator") or v.Name:find("Pallet") or v:FindFirstAncestor("Generator") or v:FindFirstAncestor("Pallet")
-            if not isPlayer and not isImportant then
-                if v:IsA("BasePart") then 
-                    v.Material = Enum.Material.SmoothPlastic 
-                    if v:IsA("MeshPart") then v.TextureID = "" end
-                elseif v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1
-                elseif v:IsA("SurfaceAppearance") or v:IsA("ParticleEmitter") or v:IsA("Trail") then 
-                    if v:IsA("SurfaceAppearance") then v:Destroy() else v.Enabled = false end
-                elseif v:IsA("SpecialMesh") then v.TextureId = "" end
-            end
+            if v:IsA("BasePart") and not v:FindFirstAncestorOfClass("Model") then v.Material = Enum.Material.SmoothPlastic 
+            elseif v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1 end
         end
     end
 end)
 
--- LOGIKA ESP GENERATOR
-task.spawn(function()
-    while task.wait(3) do
-        if _GenOn then
-            for _, v in pairs(game.Workspace:GetDescendants()) do
-                if (v.Name:find("Gen") or v.Name:find("Generator")) and (v:IsA("Model") or v:IsA("BasePart")) then
-                    if not v:FindFirstChild("GenEsp") then local h = Instance.new("Highlight", v); h.Name = "GenEsp"; h.FillColor = Color3.fromRGB(255, 255, 0); h.FillTransparency = 0.5 end
-                    v.GenEsp.Enabled = true
-                end
-            end
-        else
-            for _, v in pairs(game.Workspace:GetDescendants()) do if v:FindFirstChild("GenEsp") then v.GenEsp.Enabled = false end end
-        end
-    end
-end)
-
--- LOGIKA ESP PLAYER & LIGHTING
+-- ESP & LIGHTING
 RunService.Heartbeat:Connect(function()
     if _FullBright then Lighting.Ambient = Color3.new(1, 1, 1); Lighting.ClockTime = 12 end
     if _NoFog then Lighting.FogEnd = 999999 end
@@ -208,7 +226,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- LOGIKA NO SKILL CHECK (METATABLE)
+-- NO SKILL CHECK
 local mt = getrawmetatable(game)
 if mt then
     local old = mt.__namecall; setreadonly(mt, false)
@@ -222,11 +240,10 @@ if mt then
     end); setreadonly(mt, true)
 end
 
--- --- 6. BUTTON & TOGGLE (DENGAN ANIMASI FADE - UI PERTAMA) ---
+-- --- 6. BUTTON & TOGGLE ---
 local OpenButton = Instance.new("TextButton", ScreenGui)
 OpenButton.Size = UDim2.new(0, 50, 0, 50); OpenButton.Position = UDim2.new(0, 20, 0.5, -25)
-OpenButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30); OpenButton.Text = "BD"; OpenButton.TextColor3 = Color3.fromRGB(255, 105, 180)
-OpenButton.TextSize = 24; OpenButton.Font = Enum.Font.SourceSansBold; OpenButton.ZIndex = 500
+OpenButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30); OpenButton.Text = "BD"; OpenButton.TextColor3 = Color3.fromRGB(255, 105, 180); OpenButton.TextSize = 24; OpenButton.Font = Enum.Font.SourceSansBold; OpenButton.ZIndex = 500
 Instance.new("UICorner", OpenButton).CornerRadius = UDim.new(0, 12)
 local BtnStroke = Instance.new("UIStroke", OpenButton); BtnStroke.Color = Color3.fromRGB(255, 105, 180); BtnStroke.Thickness = 2
 EnableDrag(OpenButton)
@@ -238,13 +255,10 @@ task.spawn(function()
     end
 end)
 
-local function ToggleMenu()
+OpenButton.MouseButton1Click:Connect(function()
     if MainFrame.Visible then
-        MainFrame:TweenSize(UDim2.new(0, 0, 0, 0), "Out", "Quad", 0.3, true)
-        task.delay(0.3, function() MainFrame.Visible = false end)
+        MainFrame:TweenSize(UDim2.new(0, 0, 0, 0), "Out", "Quad", 0.3, true, function() MainFrame.Visible = false end)
     else
-        MainFrame.Visible = true; MainFrame.Size = UDim2.new(0, 0, 0, 0)
-        MainFrame:TweenSize(UDim2.new(0, 380, 0, 220), "Out", "Back", 0.4, true)
+        MainFrame.Visible = true; MainFrame:TweenSize(UDim2.new(0, 380, 0, 220), "Out", "Back", 0.4, true)
     end
-end
-OpenButton.MouseButton1Click:Connect(ToggleMenu)
+end)
