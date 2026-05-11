@@ -1,4 +1,4 @@
--- [[ BoDcChii Project - v0.4.2: POTATO MODE FIXED 🎸 ]] --
+-- [[ BoDcChii Project - v0.4.6: RADIUS & GENERATOR FIX 🎸 ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
@@ -11,8 +11,25 @@ local VIM = game:GetService("VirtualInputManager")
 -- --- 0. ANTI-REDUNDANT ---
 if CoreGui:FindFirstChild("BoDcChii_Minimalist") then CoreGui.BoDcChii_Minimalist:Destroy() end
 if CoreGui:FindFirstChild("BoDcChii_Welcome") then CoreGui.BoDcChii_Welcome:Destroy() end
+if workspace:FindFirstChild("BD_Radius") then workspace.BD_Radius:Destroy() end
 
--- --- 1. WELCOME NOTIFICATION ---
+-- --- 1. RADIUS VISUALIZER (LINGKARAN PUTIH) ---
+local function CreateVisualRadius()
+    local container = Instance.new("Part", workspace)
+    container.Name = "BD_Radius"
+    container.Shape = Enum.PartType.Cylinder
+    container.Size = Vector3.new(0.2, 19, 19) -- Radius visual disesuaikan (diameter ~19 studs)
+    container.Transparency = 1
+    container.Color = Color3.new(1, 1, 1)
+    container.CanCollide = false
+    container.Anchored = true
+    container.Material = Enum.Material.ForceField
+    container.Orientation = Vector3.new(0, 0, 90)
+    return container
+end
+local VisualRing = CreateVisualRadius()
+
+-- --- 2. WELCOME NOTIFICATION ---
 local function ShowWelcome()
     local WelcomeGui = Instance.new("ScreenGui", CoreGui)
     WelcomeGui.Name = "BoDcChii_Welcome"
@@ -25,7 +42,7 @@ local function ShowWelcome()
     Stroke.Color = Color3.fromRGB(255, 105, 180); Stroke.Thickness = 2
     local WelcomeLabel = Instance.new("TextLabel", WelcomeFrame)
     WelcomeLabel.Size = UDim2.new(1, 0, 1, 0); WelcomeLabel.BackgroundTransparency = 1
-    WelcomeLabel.Text = "Welcome To BoDcChii Project"; WelcomeLabel.TextColor3 = Color3.new(1, 1, 1)
+    WelcomeLabel.Text = "BoDcChii v0.4.6: RADIUS UPDATE"; WelcomeLabel.TextColor3 = Color3.new(1, 1, 1)
     WelcomeLabel.TextSize = 14; WelcomeLabel.Font = Enum.Font.SourceSansBold
     task.delay(2, function() WelcomeGui:Destroy() end)
 end
@@ -50,7 +67,7 @@ local function EnableDrag(gui)
     UIS.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
 end
 
--- --- 2. MAIN UI STRUCTURE ---
+-- --- 3. MAIN UI STRUCTURE ---
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 380, 0, 220); MainFrame.Position = UDim2.new(0.5, -190, 0.4, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15); MainFrame.Visible = false; MainFrame.Active = true
@@ -71,7 +88,7 @@ local Header = Instance.new("TextLabel", MainFrame)
 Header.Size = UDim2.new(1, 0, 0, 35); Header.Text = "BoDcChii Project"; Header.TextColor3 = Color3.fromRGB(255, 105, 180)
 Header.BackgroundTransparency = 1; Header.Font = Enum.Font.SourceSansBold; Header.TextSize = 18
 
--- --- 3. SCROLLING SETUP ---
+-- --- 4. SCROLLING SETUP ---
 local function SetupScroll(scroll)
     scroll.Active = true; scroll.ScrollBarThickness = 4
     scroll.ScrollBarImageColor3 = Color3.fromRGB(255, 105, 180)
@@ -93,7 +110,7 @@ LineH.Size = UDim2.new(0.95, 0, 0, 2); LineH.Position = UDim2.new(0.025, 0, 0, 3
 local LineV = Instance.new("Frame", MainFrame)
 LineV.Size = UDim2.new(0, 2, 1, -50); LineV.Position = UDim2.new(0, 122, 0, 42); LineV.BackgroundColor3 = Color3.fromRGB(255, 105, 180); LineV.BorderSizePixel = 0
 
--- --- 4. TABS & PAGES ---
+-- --- 5. TABS & PAGES ---
 local function CreateTabBtn(text)
     local btn = Instance.new("TextButton", SidebarScroll); btn.Size = UDim2.new(1, -10, 0, 35)
     btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25); btn.Text = text; btn.TextColor3 = Color3.new(1, 1, 1)
@@ -115,7 +132,7 @@ local P0, P1, P2, P3 = CreatePage(), CreatePage(), CreatePage(), CreatePage()
 
 local AboutInfo = Instance.new("TextLabel", P0)
 AboutInfo.Size = UDim2.new(1, 0, 0, 200); AboutInfo.BackgroundTransparency = 1
-AboutInfo.Text = "Creator: BoDcChii\nScript Tester: Xiaoo\nVersi: v0.4.2 (BETA)\n\nUpdate Fitur:\n- Auto Parry Beta (50s Cooldown)\n- Fitur Auto Parry dalam tahap\n  pengembangan, kemungkinan\n  masih terdapat bug.\n- Fix Analog Lock (Mobile)"
+AboutInfo.Text = "Creator: BoDcChii\nScript Tester: Xiaoo\nVersi: v0.4.6 (FIXED)\n\nUpdate Fitur:\n- ESP Generator FIXED (Dynamic Search)\n- Visual Parry Radius (Lingkaran Putih)\n- Auto Parry Beta (9.5 Studs Trigger)\n- Fix Analog Lock (Mobile)"
 AboutInfo.TextColor3 = Color3.new(1, 1, 1); AboutInfo.TextSize = 11; AboutInfo.Font = Enum.Font.SourceSansBold; AboutInfo.TextXAlignment = Enum.TextXAlignment.Left
 
 local function Show(p, b)
@@ -138,7 +155,7 @@ local function CreateBtn(parent, text)
     return btn
 end
 
--- --- 5. LOGIKA FITUR ---
+-- --- 6. LOGIKA FITUR ---
 local _SurvOn, _KillOn, _GenOn, _NoSkillGen, _FullBright, _NoFog, _PotatoMode, _AutoParry = false, false, false, false, false, false, false, false
 local isWaitingParry = false
 local threatTimer = 0
@@ -159,7 +176,19 @@ Btn4.MouseButton1Click:Connect(function() _NoSkillGen = not _NoSkillGen Toggle(B
 Btn5.MouseButton1Click:Connect(function() _FullBright = not _FullBright Toggle(Btn5, _FullBright, "FULL BRIGHT") end)
 Btn6.MouseButton1Click:Connect(function() _NoFog = not _NoFog Toggle(Btn6, _NoFog, "NO FOG") end)
 
--- AUTO PARRY LOGIC
+-- [FIXED ESP GENERATOR]
+local function UpdateGenESP()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Model") and (v.Name:find("Gen") or v.Name:find("Generator")) then
+            local hl = v:FindFirstChild("BDEspGen") or Instance.new("Highlight", v)
+            hl.Name = "BDEspGen"
+            hl.FillColor = Color3.new(0, 0.7, 1)
+            hl.Enabled = _GenOn
+        end
+    end
+end
+
+-- [AUTO PARRY LOGIC]
 BtnAP.MouseButton1Click:Connect(function() _AutoParry = not _AutoParry Toggle(BtnAP, _AutoParry, "AUTO PARRY (BETA)") end)
 
 task.spawn(function()
@@ -222,10 +251,12 @@ Btn7.MouseButton1Click:Connect(function()
     end
 end)
 
--- ESP & LIGHTING
+-- ESP & LIGHTING & RADIUS SYNC
 RunService.Heartbeat:Connect(function()
     if _FullBright then Lighting.Ambient = Color3.new(1, 1, 1); Lighting.ClockTime = 12 end
     if _NoFog then Lighting.FogEnd = 999999 end
+    
+    -- Player ESP
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= Players.LocalPlayer and p.Character then
             local hl = p.Character:FindFirstChild("BDEsp") or Instance.new("Highlight", p.Character); hl.Name = "BDEsp"
@@ -233,6 +264,18 @@ RunService.Heartbeat:Connect(function()
             hl.Enabled = (isK and _KillOn) or (not isK and _SurvOn); hl.FillColor = isK and Color3.new(1, 0, 0) or Color3.new(0, 1, 0)
         end
     end
+
+    -- Update Visual Radius Position
+    local lp = Players.LocalPlayer
+    if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") and _AutoParry then
+        VisualRing.Transparency = 0.7
+        VisualRing.Position = lp.Character.HumanoidRootPart.Position - Vector3.new(0, 2.9, 0)
+    else
+        VisualRing.Transparency = 1
+    end
+
+    -- Update Generator ESP
+    if _GenOn then UpdateGenESP() end
 end)
 
 -- NO SKILL CHECK
