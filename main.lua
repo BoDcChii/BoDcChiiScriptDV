@@ -1,24 +1,28 @@
 -- [[ BoDcChii Project - v0.4.6: RADIUS & GENERATOR FIX 🎸 ]] --
 
+local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 local VIM = game:GetService("VirtualInputManager")
 
+-- FIX: Gunakan PlayerGui jika CoreGui akses ditolak (untuk executor standard)
+local targetParent = (RunService:IsStudio() or not pcall(function() local a = CoreGui.Name end)) and Players.LocalPlayer:WaitForChild("PlayerGui") or CoreGui
+
 -- --- 0. ANTI-REDUNDANT ---
-if CoreGui:FindFirstChild("BoDcChii_Minimalist") then CoreGui.BoDcChii_Minimalist:Destroy() end
-if CoreGui:FindFirstChild("BoDcChii_Welcome") then CoreGui.BoDcChii_Welcome:Destroy() end
+if targetParent:FindFirstChild("BoDcChii_Minimalist") then targetParent.BoDcChii_Minimalist:Destroy() end
+if targetParent:FindFirstChild("BoDcChii_Welcome") then targetParent.BoDcChii_Welcome:Destroy() end
+if targetParent:FindFirstChild("BoDcChii_Toggle") then targetParent.BoDcChii_Toggle:Destroy() end
 if workspace:FindFirstChild("BD_Radius") then workspace.BD_Radius:Destroy() end
 
--- --- 1. RADIUS VISUALIZER (LINGKARAN PUTIH) ---
+-- --- 1. RADIUS VISUALIZER ---
 local function CreateVisualRadius()
     local container = Instance.new("Part", workspace)
     container.Name = "BD_Radius"
     container.Shape = Enum.PartType.Cylinder
-    container.Size = Vector3.new(0.2, 19, 19) -- Radius visual disesuaikan (diameter ~19 studs)
+    container.Size = Vector3.new(0.2, 19, 19)
     container.Transparency = 1
     container.Color = Color3.new(1, 1, 1)
     container.CanCollide = false
@@ -31,7 +35,7 @@ local VisualRing = CreateVisualRadius()
 
 -- --- 2. WELCOME NOTIFICATION ---
 local function ShowWelcome()
-    local WelcomeGui = Instance.new("ScreenGui", CoreGui)
+    local WelcomeGui = Instance.new("ScreenGui", targetParent)
     WelcomeGui.Name = "BoDcChii_Welcome"
     local WelcomeFrame = Instance.new("Frame", WelcomeGui)
     WelcomeFrame.Size = UDim2.new(0, 220, 0, 45)
@@ -48,13 +52,13 @@ local function ShowWelcome()
 end
 pcall(ShowWelcome)
 
-local ScreenGui = Instance.new("ScreenGui", CoreGui)
+local ScreenGui = Instance.new("ScreenGui", targetParent)
 ScreenGui.Name = "BoDcChii_Minimalist"; ScreenGui.ResetOnSpawn = false
 
 local function EnableDrag(gui)
     local dragging, dragStart, startPos
     gui.InputBegan:Connect(function(input)
-        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and not UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
             dragging = true; dragStart = input.Position; startPos = gui.Position
         end
     end)
@@ -99,7 +103,7 @@ end
 local SidebarScroll = Instance.new("ScrollingFrame", MainFrame)
 SidebarScroll.Size = UDim2.new(0, 115, 1, -45); SidebarScroll.Position = UDim2.new(0, 5, 0, 42); SidebarScroll.BackgroundTransparency = 1; SidebarScroll.BorderSizePixel = 0
 SetupScroll(SidebarScroll)
-Instance.new("UIListLayout", SidebarScroll).Padding = UDim.new(0, 5)
+local SideList = Instance.new("UIListLayout", SidebarScroll); SideList.Padding = UDim.new(0, 5)
 
 local ContentScroll = Instance.new("ScrollingFrame", MainFrame)
 ContentScroll.Size = UDim2.new(1, -135, 1, -50); ContentScroll.Position = UDim2.new(0, 130, 0, 45); ContentScroll.BackgroundTransparency = 1; ContentScroll.BorderSizePixel = 0
@@ -132,7 +136,7 @@ local P0, P1, P2, P3 = CreatePage(), CreatePage(), CreatePage(), CreatePage()
 
 local AboutInfo = Instance.new("TextLabel", P0)
 AboutInfo.Size = UDim2.new(1, 0, 0, 200); AboutInfo.BackgroundTransparency = 1
-AboutInfo.Text = "Creator: BoDcChii\nScript Tester: Xiaoo\nVersi: v0.4.6 (FIXED)\n\nUpdate Fitur:\n- ESP Generator FIXED (Dynamic Search)\n- Visual Parry Radius (Lingkaran Putih)\n- Auto Parry Beta (9.5 Studs Trigger)\n- Fix Analog Lock (Mobile)\n- Tambah Fitur Tembus Tembok"
+AboutInfo.Text = "Creator: BoDcChii\nScript Tester: Xiaoo\nVersi: v0.4.6 (FIXED)\n\nUpdate Fitur:\n- ESP Generator FIXED\n- Visual Parry Radius\n- Auto Parry Beta\n- Fix Analog Lock\n- Tembus Tembok"
 AboutInfo.TextColor3 = Color3.new(1, 1, 1); AboutInfo.TextSize = 11; AboutInfo.Font = Enum.Font.SourceSansBold; AboutInfo.TextXAlignment = Enum.TextXAlignment.Left
 
 local function Show(p, b)
@@ -231,46 +235,35 @@ task.spawn(function()
     end
 end)
 
--- --- POTATO MODE ULTIMATE SYNC ---
+-- --- POTATO MODE ---
 Btn7.MouseButton1Click:Connect(function() 
     _PotatoMode = not _PotatoMode 
     Toggle(Btn7, _PotatoMode, "POTATO MODE")
     if _PotatoMode then
         for _, v in pairs(game.Workspace:GetDescendants()) do
             local isPlayer = v:FindFirstAncestorOfClass("Model") and Players:GetPlayerFromCharacter(v:FindFirstAncestorOfClass("Model"))
-            local isImportant = v.Name:find("Gen") or v.Name:find("Generator") or v.Name:find("Pallet") or v:FindFirstAncestor("Generator") or v:FindFirstAncestor("Pallet")
+            local isImportant = v.Name:find("Gen") or v.Name:find("Generator") or v.Name:find("Pallet")
             if not isPlayer and not isImportant then
-                if v:IsA("BasePart") then 
-                    v.Material = Enum.Material.SmoothPlastic 
-                    if v:IsA("MeshPart") then v.TextureID = "" end
+                if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic 
                 elseif v:IsA("Texture") or v:IsA("Decal") then v.Transparency = 1
-                elseif v:IsA("SurfaceAppearance") or v:IsA("ParticleEmitter") or v:IsA("Trail") then 
-                    if v:IsA("SurfaceAppearance") then v:Destroy() else v.Enabled = false end
-                elseif v:IsA("SpecialMesh") then v.TextureId = "" end
+                elseif v:IsA("ParticleEmitter") then v.Enabled = false end
             end
         end
     end
 end)
 
--- ESP & LIGHTING & RADIUS SYNC & NOCLIP
-RunService.Stepped:Connect(function()
+-- LOOP UPDATES
+RunService.Heartbeat:Connect(function()
+    if _FullBright then Lighting.Ambient = Color3.new(1, 1, 1); Lighting.ClockTime = 12 end
+    if _NoFog then Lighting.FogEnd = 999999 end
     if _NoclipOn then
         local char = Players.LocalPlayer.Character
         if char then
             for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
-                end
+                if part:IsA("BasePart") then part.CanCollide = false end
             end
         end
     end
-end)
-
-RunService.Heartbeat:Connect(function()
-    if _FullBright then Lighting.Ambient = Color3.new(1, 1, 1); Lighting.ClockTime = 12 end
-    if _NoFog then Lighting.FogEnd = 999999 end
-    
-    -- Player ESP
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= Players.LocalPlayer and p.Character then
             local hl = p.Character:FindFirstChild("BDEsp") or Instance.new("Highlight", p.Character); hl.Name = "BDEsp"
@@ -278,55 +271,26 @@ RunService.Heartbeat:Connect(function()
             hl.Enabled = (isK and _KillOn) or (not isK and _SurvOn); hl.FillColor = isK and Color3.new(1, 0, 0) or Color3.new(0, 1, 0)
         end
     end
-
-    -- Update Visual Radius Position
     local lp = Players.LocalPlayer
     if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") and _AutoParry then
-        VisualRing.Transparency = 0.7
-        VisualRing.Position = lp.Character.HumanoidRootPart.Position - Vector3.new(0, 2.9, 0)
-    else
-        VisualRing.Transparency = 1
-    end
-
-    -- Update Generator ESP
+        VisualRing.Transparency = 0.7; VisualRing.Position = lp.Character.HumanoidRootPart.Position - Vector3.new(0, 2.9, 0)
+    else VisualRing.Transparency = 1 end
     if _GenOn then UpdateGenESP() end
 end)
 
--- NO SKILL CHECK
-local mt = getrawmetatable(game)
-if mt then
-    local old = mt.__namecall; setreadonly(mt, false)
-    mt.__namecall = newcclosure(function(self, ...)
-        local method = getnamecallmethod()
-        if _NoSkillGen and (method == "FireServer" or method == "InvokeServer") then
-            local n = tostring(self):lower()
-            if n:find("fail") or n:find("skillcheck") or n:find("explode") then return nil end
-        end
-        return old(self, ...)
-    end); setreadonly(mt, true)
-end
-
--- --- 6. BUTTON & TOGGLE ---
-local OpenButton = Instance.new("ScreenGui", CoreGui)
-OpenButton.Name = "BoDcChii_Toggle"
-local MainBtn = Instance.new("TextButton", OpenButton)
+-- --- 6. TOGGLE BUTTON ---
+local OpenButtonGui = Instance.new("ScreenGui", targetParent)
+OpenButtonGui.Name = "BoDcChii_Toggle"
+local MainBtn = Instance.new("TextButton", OpenButtonGui)
 MainBtn.Size = UDim2.new(0, 50, 0, 50); MainBtn.Position = UDim2.new(0, 20, 0.5, -25)
 MainBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); MainBtn.Text = "BD"; MainBtn.TextColor3 = Color3.fromRGB(255, 105, 180); MainBtn.TextSize = 24; MainBtn.Font = Enum.Font.SourceSansBold
 Instance.new("UICorner", MainBtn).CornerRadius = UDim.new(0, 12)
 local BtnStroke = Instance.new("UIStroke", MainBtn); BtnStroke.Color = Color3.fromRGB(255, 105, 180); BtnStroke.Thickness = 2
 EnableDrag(MainBtn)
 
-task.spawn(function()
-    while task.wait() do
-        local hue = tick() % 5 / 5
-        BtnStroke.Color = Color3.fromHSV(hue, 0.6, 1)
-    end
-end)
-
 MainBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
     if MainFrame.Visible then
-        MainFrame:TweenSize(UDim2.new(0, 0, 0, 0), "Out", "Quad", 0.3, true, function() MainFrame.Visible = false end)
-    else
-        MainFrame.Visible = true; MainFrame:TweenSize(UDim2.new(0, 380, 0, 220), "Out", "Back", 0.4, true)
+        MainFrame:TweenSize(UDim2.new(0, 380, 0, 220), "Out", "Back", 0.3, true)
     end
 end)
