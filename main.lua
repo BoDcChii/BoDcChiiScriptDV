@@ -132,11 +132,7 @@ local P0, P1, P2, P3 = CreatePage(), CreatePage(), CreatePage(), CreatePage()
 
 local AboutInfo = Instance.new("TextLabel", P0)
 AboutInfo.Size = UDim2.new(1, 0, 0, 200); AboutInfo.BackgroundTransparency = 1
-<<<<<<< HEAD
 AboutInfo.Text = "Creator: BoDcChii\nScript Tester: Xiaoo\nVersi: v0.4.6 (FIXED)\n\nUpdate Fitur:\n- ESP Generator FIXED (Dynamic Search)\n- Visual Parry Radius (Lingkaran Putih)\n- Auto Parry Beta (9.5 Studs Trigger)\n- Fix Analog Lock (Mobile)\n- Tambah Fitur Tembus Tembok"
-=======
-AboutInfo.Text = "Creator: BoDcChii\nScript Tester: Xiaoo\nVersi: v0.4.6 (FIXED)\n\nUpdate Fitur:\n- ESP Generator FIXED (Dynamic Search)\n- Visual Parry Radius (Lingkaran Putih)\n- Auto Parry Beta (9.5 Studs Trigger)\n- Fix Analog Lock (Mobile)"
->>>>>>> 2def3f7d165cfb7756a1bda17a7c3fb4aa0526dd
 AboutInfo.TextColor3 = Color3.new(1, 1, 1); AboutInfo.TextSize = 11; AboutInfo.Font = Enum.Font.SourceSansBold; AboutInfo.TextXAlignment = Enum.TextXAlignment.Left
 
 local function Show(p, b)
@@ -160,11 +156,7 @@ local function CreateBtn(parent, text)
 end
 
 -- --- 6. LOGIKA FITUR ---
-<<<<<<< HEAD
 local _SurvOn, _KillOn, _GenOn, _NoSkillGen, _FullBright, _NoFog, _PotatoMode, _AutoParry, _NoclipOn = false, false, false, false, false, false, false, false, false
-=======
-local _SurvOn, _KillOn, _GenOn, _NoSkillGen, _FullBright, _NoFog, _PotatoMode, _AutoParry = false, false, false, false, false, false, false, false
->>>>>>> 2def3f7d165cfb7756a1bda17a7c3fb4aa0526dd
 local isWaitingParry = false
 local threatTimer = 0
 
@@ -260,7 +252,6 @@ Btn7.MouseButton1Click:Connect(function()
     end
 end)
 
-<<<<<<< HEAD
 -- ESP & LIGHTING & RADIUS SYNC & NOCLIP
 RunService.Stepped:Connect(function()
     if _NoclipOn then
@@ -275,9 +266,6 @@ RunService.Stepped:Connect(function()
     end
 end)
 
-=======
--- ESP & LIGHTING & RADIUS SYNC
->>>>>>> 2def3f7d165cfb7756a1bda17a7c3fb4aa0526dd
 RunService.Heartbeat:Connect(function()
     if _FullBright then Lighting.Ambient = Color3.new(1, 1, 1); Lighting.ClockTime = 12 end
     if _NoFog then Lighting.FogEnd = 999999 end
